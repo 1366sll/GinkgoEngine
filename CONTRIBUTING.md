@@ -63,7 +63,6 @@ GinkgoEngine/
 - **Quotes:** Single quotes preferred
 - **Semicolons:** Yes
 - **Comments:** Chinese is fine for domain-specific comments; use English for API-facing JSDoc
-- Keep the zero-dependency philosophy — prefer vanilla JS over npm packages
 
 ## License
 
