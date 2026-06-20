@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Epilogue · Ginkgo Engine</title>
+    <link rel="stylesheet" href="css/gal-core.css">
+    <link rel="stylesheet" href="css/epilogue.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#dba541">
+
+    <style>
+        html, body { width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#0a080c;font-family:'Noto Serif SC',serif; }
+
+        #dialogArea,#locationHint,#musicHint,#skipIndicator,#affinityDisplay,#loadingIndicator,
+        #choicesContainer,#gamepadIndicator,.letterbox-overlay,.scene-transition-overlay { display:none!important; }
+
+        /* ═══════ 视觉层：全屏背景，立绘叠在上面 ═══════ */
+        #gameWrapper {
+            position:fixed;top:0;left:0;right:0;bottom:0;z-index:1;
+            max-width:none;border-radius:0;box-shadow:none;
+            background:transparent;overflow:visible!important;
+        }
+        #gameWrapper .visual-area {
+            aspect-ratio:auto;height:100%;width:100%;
+            background:transparent;overflow:visible;
+            /* 画面演出过渡：filter 和 mood 效果平滑切换 */
+            transition: filter 0.8s ease;
+        }
+        /* 背景层和立绘层的过渡（mood class 通过子元素 filter 生效） */
+        .bg-layer, .bg-layer-2, #spriteWrapper {
+            transition: filter 0.8s ease !important;
+        }
+        /* 背景层本身不变，但底部叠一层渐变让整个画面从下半开始收深 */
+        .bg-layer::after {
+            content:""; position:absolute; bottom:0;left:0;right:0;
+            height:65%;
+            background: linear-gradient(to bottom,
+                transparent 0%,
+                rgba(8,10,16,0.35) 30%,
+                rgba(8,10,16,0.65) 55%,
+                rgba(8,10,16,0.85) 80%,
+                rgba(8,10,16,0.94) 100%
+            );
+            z-index:2; pointer-events:none;
+        }
+
+        /* 立绘：环境暖光融入 */
+        #spriteWrapper {
+            height:80%; bottom:5%; right:12%;
+        }
+        #spriteWrapper img {
+            object-position:bottom;
+            filter:
+                drop-shadow(0 8px 20px rgba(0,0,0,0.5))
+                drop-shadow(0 2px 6px rgba(0,0,0,0.3))
+                brightness(1.04)
+                sepia(0.06)
+                !important;
+        }
+
+        /* ═══════ 聊天面板：半透明浮层 ═══════ */
+        #epilogueContainer {
+            position:fixed!important;
+            top:52%!important; bottom:0!important;
+            left:0!important;right:0!important;
+            z-index:50!important;height:auto!important;max-height:none!important;
+        }
+
+        /* ═══════ 顶部栏 ═══════ */
+        #epTopBar {
+            position:fixed;top:0;left:0;right:0;z-index:60;
+            display:flex;align-items:center;justify-content:space-between;
+            padding:10px 18px;pointer-events:none;
+        }
+        #epTopBar>*{pointer-events:auto;}
+        #epTopTitle {
+            color:rgba(255,255,255,0.45);font-size:12px;font-weight:600;letter-spacing:3px;
+            backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+            background:rgba(10,8,12,0.15);padding:4px 12px;border-radius:16px;
+        }
+        #epReturnBtn,#epCustomBtn {
+            padding:5px 13px;border-radius:16px;
+            border:1px solid rgba(255,255,255,0.08);
+            background:rgba(10,8,12,0.15);color:rgba(255,255,255,0.4);
+            font-size:11px;cursor:pointer;font-family:inherit;
+            backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:all 0.3s;
+        }
+        #epReturnBtn:hover,#epCustomBtn:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.18);color:rgba(255,255,255,0.7);}
+
+        /* 启动遮罩 */
+        #epSplash {
+            position:fixed;inset:0;z-index:200;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            background:rgba(10,8,12,0.92);cursor:pointer;transition:opacity 0.8s;
+        }
+        #epSplash.fade-out{opacity:0;pointer-events:none;}
+        #epSplashTitle{font-size:42px;font-weight:900;color:#d4af37;letter-spacing:8px;margin-bottom:8px;text-shadow:0 0 40px rgba(212,175,55,0.3);}
+        #epSplashSub{font-size:16px;color:rgba(255,255,255,0.4);letter-spacing:4px;margin-bottom:40px;}
+        #epSplashHint{font-size:14px;color:rgba(255,255,255,0.25);animation:epHintPulse 2s ease-in-out infinite;}
+        @keyframes epHintPulse{0%,100%{opacity:0.25}50%{opacity:0.6}}
+    </style>
+<script src="js/i18n.js"></script>
+</head>
+<body>
+
+<div id="epTopBar">
+    <span id="epTopTitle" data-i18n="epilogue.top_title">💬 后日谈</span>
+    <div style="display:flex;gap:8px;">
+        <button id="epCustomBtn" data-i18n-btn="epilogue.customize"><i class="fa-solid fa-palette"></i> 场景</button>
+        <button id="epReturnBtn" data-i18n-btn="epilogue.return_game"><i class="fa-solid fa-arrow-left"></i> 返回游戏</button>
+    </div>
+</div>
+
+<div id="epSplash">
+    <div id="epSplashTitle" data-i18n="epilogue.splash_title">Ginkgo Engine</div>
+    <div id="epSplashSub" data-i18n="epilogue.splash_sub">Epilogue · AI 角色对话</div>
+    <div id="epSplashHint" data-i18n="epilogue.splash_hint">— 点击任意处开始 —</div>
+</div>
+
+<div class="game-wrapper" id="gameWrapper">
+    <div class="visual-area">
+        <div class="bg-layer" id="bgLayer"></div>
+        <div class="bg-layer-2" id="bgLayer2"></div>
+        <div class="sprite-wrapper" id="spriteWrapper">
+            <img id="characterSprite" src="" alt="立绘">
+        </div>
+        <div class="vignette-overlay" id="vignetteOverlay"></div>
+        <div class="flash-overlay" id="flashOverlay"></div>
+        <div class="letterbox-overlay" id="letterboxOverlay"></div>
+        <canvas class="particle-canvas" id="particleContainer"></canvas>
+    </div>
+    <div class="dialog-area" id="dialogArea">
+        <div class="speaker-name" id="speakerName"></div>
+        <div class="dialog-text" id="dialogText"></div>
+    </div>
+</div>
+
+<script src="js/epilogue/ep-api.js"></script>
+<script src="js/epilogue/ep-memory.js"></script>
+<script src="js/epilogue/ep-emotion.js"></script>
+<script src="js/epilogue/ep-effects.js"></script>
+<script src="js/epilogue/ep-tts.js"></script>
+<script src="js/epilogue/ep-gaze.js"></script>
+<script src="js/epilogue/ep-ui.js"></script>
+<script src="js/epilogue/ep-customize.js"></script>
+<script src="js/epilogue/ep-live2d.js"></script>
+<script src="js/epilogue/ep-engine.js"></script>
+
+<script>
+(function(){'use strict';
+    async function initParticles(){
+        var c=document.getElementById('particleContainer');
+        if(!c||typeof tsParticles==='undefined')return;
+        try{await tsParticles.load('particleContainer',{
+            autoPlay:true,fpsLimit:30,
+            particles:{number:{value:10},color:{value:['#d4af37','#c9a030','#b89028']},
+                shape:{type:'image',image:[{src:'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 30"><path d="M10 0 C10 0 2 8 2 18 A8 8 0 0018 18 C18 8 10 0 10 0Z" fill="%23d4af37" opacity="0.6"/></svg>',width:20,height:30}]},
+                size:{value:{min:8,max:16}},opacity:{value:{min:0.06,max:0.25}},
+                move:{enable:true,speed:{min:0.2,max:0.8},direction:'bottom',random:true,straight:false,outModes:'out'}
+            },detectRetina:true});
+        }catch(e){}
+    }
+    function setupSplash(){
+        var s=document.getElementById('epSplash');if(!s)return;
+        s.addEventListener('click',function(){
+            s.classList.add('fade-out');setTimeout(function(){if(s.parentNode)s.remove();},800);
+            if(EpilogueAPI.hasKey())setTimeout(function(){var i=document.getElementById('epMessageInput');if(i)i.focus();},600);
+            // ★ 用首次交互启动 BGM（绕开浏览器自动播放限制）
+            var a=document.getElementById('bgmAudio')||document.querySelector('audio');
+            if(a&&a.src&&a.paused){a.play().catch(function(){});}
+        });
+    }
+    function setupTopBar(){
+        document.getElementById('epReturnBtn').addEventListener('click',function(){if(confirm(t('epilogue.return_confirm'))){EpilogueTTS.stop();window.location.href='index.html';}});
+        document.getElementById('epCustomBtn').addEventListener('click',function(){EpilogueCustomize.open();});
+    }
+    window.epTestEffect=function(t){if(typeof EpilogueEffects==='undefined')return;EpilogueEffects.init();var m={sepia:'sepia',vignette:'vignette',flash:'flash',warm:'mood-warm',cool:'mood-cool',dark:'dark',blur:'blur',bright:'bright'};EpilogueEffects.playAll([{type:m[t]||t,duration:t==='flash'?200:4000}]);};
+    window.epClearEffects=function(){if(typeof EpilogueEffects!=='undefined')EpilogueEffects.clearAll();};
+
+    async function boot(){setupSplash();setupTopBar();initParticles();EpilogueCustomize.init();if(typeof EpilogueGaze!=='undefined')EpilogueGaze.init();await EpilogueEngine.init();EpilogueUI.show();var l2dEnabled=localStorage.getItem('epilogue_live2d_enabled')!=='false';if(typeof EpilogueLive2D!=='undefined'&&l2dEnabled){EpilogueLive2D.init('live2d/models/Haru/Haru.model3.json').then(function(ok){if(!ok)console.log('[Boot] Live2D 不可用，使用静态立绘');else{console.log('[Boot] Live2D 已接管角色渲染');if(typeof EpilogueGaze!=='undefined')EpilogueGaze.notifyLive2DReady();}});}else{console.log('[Boot] Live2D 已禁用，使用静态立绘');}console.log('🍂 后日谈已就绪');}
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+<!-- PWA: Service Worker 注册 -->
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+        console.log('[SW] 注册成功, scope:', reg.scope);
+    }).catch(function(err) {
+        console.warn('[SW] 注册失败:', err.message);
+    });
+}
+</script>
+</body>
+</html>

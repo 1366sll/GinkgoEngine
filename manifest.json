@@ -1,0 +1,20 @@
+{
+  "name": "Ginkgo Engine",
+  "short_name": "Ginkgo",
+  "description": "An open-source Web Galgame engine — build your own visual novel",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0a080c",
+  "theme_color": "#dba541",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "en"
+}

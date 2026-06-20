@@ -1,0 +1,30 @@
+{
+  "name": "ginkgo-engine",
+  "version": "1.0.0",
+  "description": "An open-source, web-based Galgame (Visual Novel) engine built with vanilla HTML/CSS/JavaScript",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "visual-novel",
+    "galgame",
+    "game-engine",
+    "web",
+    "javascript",
+    "interactive-fiction",
+    "live2d",
+    "pwa"
+  ],
+  "author": "张文杰, 邹奕鸣",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -1,0 +1,527 @@
+/* ========== 银杏落雨时 · 剧本编辑器 优雅增强版 ========== */
+/* 仅修改视觉，不改变任何布局 (无 display/flex/grid/position 等改动) */
+
+/* -------------------- 全局字体与基础动画 -------------------- */
+body {
+    background: linear-gradient(135deg, #f0e9e0 0%, #e2d5c4 100%) !important;
+    background-attachment: fixed !important;
+    font-family: 'Segoe UI', 'Roboto', 'Noto Sans CJK SC', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    color: #2c241a !important;
+    animation: bgFade 12s ease infinite alternate !important;
+}
+
+/* 背景渐变缓慢流动动画 */
+@keyframes bgFade {
+    0% { background: linear-gradient(135deg, #f0e9e0 0%, #e2d5c4 100%); }
+    100% { background: linear-gradient(225deg, #f8f0e6 0%, #e8dcc8 100%); }
+}
+
+/* -------------------- 卡片容器：柔和提升 + 微悬停动画 -------------------- */
+.resource-panel,
+.scene-list-panel,
+.detail-panel,
+.preview-panel {
+    background: rgba(255, 250, 242, 0.96) !important;
+    border-radius: 32px !important;
+    border: 1px solid rgba(219, 165, 65, 0.4) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+    transition: all 0.25s ease !important;
+}
+
+.resource-panel:hover,
+.scene-list-panel:hover,
+.detail-panel:hover,
+.preview-panel:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 20px 32px rgba(0, 0, 0, 0.1) !important;
+    background: rgba(255, 253, 248, 0.98) !important;
+}
+
+.scene-list-panel .preview-panel {
+    margin-top: 28px;
+}
+
+/* 左侧资源库精致渐变背景 */
+.resource-panel {
+    background: linear-gradient(125deg, #fffaf2, #fef3e6) !important;
+}
+
+/* -------------------- 标题字体与装饰 -------------------- */
+h3, .resource-panel h3, .scene-list-panel h3, .detail-panel h3, .preview-panel h3 {
+    font-size: 1.28rem !important;
+    font-weight: 600 !important;
+    font-family: 'Inter', 'Segoe UI', 'Noto Sans CJK SC', sans-serif !important;
+    color: #6b4c2c !important;
+    border-left: 5px solid #dba541 !important;
+    padding-left: 16px !important;
+    margin-bottom: 20px !important;
+    letter-spacing: -0.2px !important;
+    background: linear-gradient(120deg, #6b4c2c, #9b7a54) !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    color: transparent !important;
+    transition: 0.2s !important;
+}
+h3:hover {
+    background: linear-gradient(120deg, #8b6238, #c4914a) !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+}
+
+/* -------------------- 按钮统一：圆角 + 渐变 + 微动效 -------------------- */
+.btn-primary,
+.btn-secondary,
+.icon-btn,
+.upload-btn,
+.add-choice-btn,
+.choice-item button {
+    background: linear-gradient(145deg, #f2e6da, #e8daca) !important;
+    border: none !important;
+    border-radius: 48px !important;
+    padding: 6px 18px !important;
+    font-weight: 500 !important;
+    font-family: inherit !important;
+    color: #4a351e !important;
+    transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(145deg, #e2b05a, #d39b3c) !important;
+    color: #2a1f12 !important;
+    font-weight: 600 !important;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover,
+.icon-btn:hover,
+.upload-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(145deg, #edbc6b, #dfaa4a) !important;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(145deg, #efe2d4, #e4d4c2) !important;
+    color: #3e2d1c !important;
+}
+
+/* -------------------- 表格表头与行圆角修复 -------------------- */
+.scene-table th {
+    background: #ebdfcf !important;
+    color: #5c4329 !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+}
+.scene-table tr:first-child th:first-child {
+    border-top-left-radius: 20px !important;
+}
+.scene-table tr:first-child th:last-child {
+    border-top-right-radius: 20px !important;
+}
+
+.scene-row.selected {
+    background: #fff2e4 !important;
+    box-shadow: inset 0 0 0 2px #dba541, 0 2px 6px rgba(0,0,0,0.05) !important;
+    border-radius: 18px !important;
+}
+
+/* 表格内容圆角优化 */
+.scene-table td:first-child {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+.scene-table td:last-child {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+/* -------------------- 资源列表圆角 -------------------- */
+.resource-list {
+    background: #fcf6ef !important;
+    border-radius: 24px !important;
+    border: 1px solid #eedfcb !important;
+}
+.resource-item {
+    border-radius: 20px !important;
+    margin: 2px 0 !important;
+}
+
+/* -------------------- 表单控件圆润 -------------------- */
+.form-group input,
+.form-group select,
+.form-group textarea,
+#searchInput {
+    background: #fffffffa !important;
+    border: 1px solid #e5d4bf !important;
+    border-radius: 32px !important;
+    padding: 10px 16px !important;
+    font-size: 0.85rem !important;
+    transition: all 0.2s !important;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+#searchInput:focus {
+    border-color: #dba541 !important;
+    box-shadow: 0 0 0 3px rgba(219,165,65,0.2) !important;
+    outline: none !important;
+    transform: scale(1.01) !important;
+}
+
+/* -------------------- 预览区更精致的圆角与阴影 -------------------- */
+.preview-box {
+    border-radius: 28px !important;
+    border: 2px solid #dba541 !important;
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.2) !important;
+}
+.preview-dialog {
+    border-radius: 0 0 26px 26px !important;
+}
+.preview-speaker {
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* -------------------- 分支选项按钮美观 -------------------- */
+.choice-button {
+    background: linear-gradient(135deg, #eabe7a, #dc9e44) !important;
+    border-radius: 40px !important;
+    padding: 10px 18px !important;
+    font-weight: 600 !important;
+    transition: 0.2s !important;
+}
+.choice-button:hover {
+    transform: scale(1.02) !important;
+    background: linear-gradient(135deg, #f2ce8a, #e8b458) !important;
+}
+
+/* -------------------- 状态栏与提示圆角 -------------------- */
+.status,
+.cg-preview-tip {
+    background: #ece0d0 !important;
+    border-radius: 40px !important;
+    padding: 8px 16px !important;
+    font-size: 0.75rem !important;
+}
+
+/* -------------------- 模态框圆角 -------------------- */
+.modal-content {
+    border-radius: 40px !important;
+}
+.cg-card {
+    border-radius: 24px !important;
+}
+.cg-card img {
+    border-radius: 20px !important;
+}
+
+/* -------------------- 滚动条圆润 -------------------- */
+::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+}
+::-webkit-scrollbar-track {
+    background: #e9dfd2 !important;
+    border-radius: 20px !important;
+}
+::-webkit-scrollbar-thumb {
+    background: #cfb691 !important;
+    border-radius: 20px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #dba541 !important;
+}
+
+/* -------------------- 简单悬浮动画加一点小光效 -------------------- */
+.resource-item:hover,
+.choice-item:hover {
+    background: rgba(219, 165, 65, 0.08) !important;
+    border-radius: 20px !important;
+    transition: 0.1s !important;
+}
+
+/* -------------------- 鼠标指针（可选，不影响功能） -------------------- */
+body, html {
+    cursor: url('./mouse/WitchSpring/正常选择.cur'), auto !important;
+}
+button:hover, .choice-button:hover, .icon-btn:hover {
+    cursor: url('./mouse/WitchSpring/链接选择.cur'), pointer !important;
+}
+
+/* ========== 分支选项区域样式完善 ========== */
+/* 选项编辑列表 */
+.choices-editor {
+    background: #fefaf5;
+    border-radius: 28px;
+    padding: 16px;
+    margin-top: 12px;
+    border: 1px solid #e6d5c2;
+}
+.choice-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+    background: #fffdf9;
+    padding: 8px 12px;
+    border-radius: 40px;
+    transition: all 0.2s;
+}
+.choice-item:hover {
+    background: #fff7ed;
+    box-shadow: 0 2px 8px rgba(219,165,65,0.2);
+}
+.choice-item input {
+    flex: 2;
+    background: white;
+    border-radius: 40px;
+    padding: 8px 16px;
+}
+.choice-item input:first-child {
+    flex: 3;
+}
+.choice-item button {
+    background: #f0e3d4;
+    border-radius: 40px;
+    padding: 6px 14px;
+    font-weight: normal;
+}
+/* 预览区的分支选项按钮 */
+.preview-choices-container .choice-button {
+    background: linear-gradient(135deg, #f3d69c, #e6b45e);
+    border: none;
+    border-radius: 48px;
+    padding: 12px 20px;
+    font-weight: 600;
+    color: #2f2418;
+    text-align: center;
+    transition: 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.preview-choices-container .choice-button:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #ffdfa5, #f0c46a);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+}
+
+/* ========== 场景列表悬停发光效果（替换原有黑色背景） ========== */
+.scene-row:hover {
+    background: transparent !important;   /* 移除原有深色背景 */
+    box-shadow: 0 0 0 2px #dba541, 0 0 0 4px rgba(219,165,65,0.3) !important;
+    border-radius: 16px !important;
+    transition: all 0.15s ease !important;
+    cursor: pointer;
+}
+/* 保持选中行样式不变，但增加柔和光晕 */
+.scene-row.selected {
+    background: #fff0df !important;
+    box-shadow: 0 0 0 2px #dba541, 0 0 0 6px rgba(219,165,65,0.2) !important;
+    border-radius: 16px !important;
+}
+
+/* ========== 修复表格表头滚动时圆角露出背景问题 ========== */
+.scene-table-wrapper {
+    overflow-y: auto;
+    border-radius: 20px;  /* 确保外层容器也有圆角，裁剪溢出 */
+    background: inherit;  /* 继承背景，避免透出后面内容 */
+}
+.scene-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+.scene-table th {
+    position: sticky;
+    top: 0;
+    background: #f2ebdf;  /* 与原来表头颜色一致，但确保不透明 */
+    z-index: 10;
+    /* 修复圆角：将表头第一行左上/右上圆角应用在 th 上 */
+}
+/* 针对表头第一个和最后一个 th 单独设置圆角，避免滚动时漏出背景 */
+.scene-table tr:first-child th:first-child {
+    border-top-left-radius: 20px;
+}
+.scene-table tr:first-child th:last-child {
+    border-top-right-radius: 20px;
+}
+/* 确保表头背景覆盖整个滚动区域，不露出后面的圆角空洞 */
+.scene-table-wrapper {
+    background: #f2ebdf;  /* 与表头同色，防止滚动时透出下方背景 */
+}
+/* 滚动条轨道与表头背景融合 */
+::-webkit-scrollbar-track {
+    background: #e9dfd2;
+    border-radius: 20px;
+}
+
+/* 让三个区域等宽且对齐 */
+.editor-container {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+.resource-panel {
+    flex: 1;
+    min-width: 260px;
+}
+.middle-column {
+    flex: 2;
+    min-width: 400px;
+}
+.right-column {
+    flex: 1.5;
+    min-width: 360px;
+}
+/* 确保场景列表卡片高度自适应 */
+.scene-list-panel, .preview-panel {
+    margin: 0;
+}
+
+/* ========== 修复表头与容器之间的缝隙 ========== */
+.scene-list-panel {
+    overflow: hidden;           /* 确保内部圆角裁剪，不让背景透出 */
+    padding-top: 20px;          /* 保留卡片顶部内边距，但不会产生缝隙 */
+}
+.scene-table-wrapper {
+    margin-top: 0;              /* 消除可能的边距 */
+    padding-top: 0;
+    background: transparent;    /* 让表格背景与卡片融合 */
+    border-radius: 20px;        /* 与卡片圆角对齐，但使用 overflow 裁剪 */
+}
+.scene-table {
+    margin: 0;
+    border-collapse: collapse;
+    border-style: hidden;       /* 隐藏表格默认边框，避免缝隙 */
+    border-radius: 20px;        /* 可选，但会被 overflow 裁剪 */
+}
+.scene-table th:first-child {
+    border-top-left-radius: 20px;  /* 与卡片圆角一致 */
+}
+.scene-table th:last-child {
+    border-top-right-radius: 20px;
+}
+.scene-table thead tr {
+    background: inherit;
+}
+/* 确保表头背景不透明且无间隙 */
+.scene-table th {
+    background-color: #f2ebdf;  /* 保持与卡片背景一致，或透明 */
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+/* 若卡片背景为渐变或半透，这里设为相同 */
+/* ========== 1. 卡片高度自适应，消除空白 ========== */
+.editor-container {
+    align-items: flex-start !important;   /* 防止容器拉伸，让各列高度由内容决定 */
+}
+.scene-list-panel,
+.resource-panel,
+.right-column {
+    align-self: stretch;                  /* 保持内部元素正常撑开 */
+}
+.scene-table-wrapper {
+    max-height: none;                     /* 去掉固定最大高度，让表格根据行数自然伸缩 */
+    overflow-y: visible;                  /* 当内容过多时自动出现滚动条（需配合 max-height 使用，但为了自适应，建议不用） */
+}
+/* 若希望行数过多时仍有滚动条，保留 max-height 并使用 overflow-y: auto */
+.scene-table-wrapper {
+    max-height: 500px;                   /* 限制最大高度，超出滚动，内容少时自动收缩 */
+    overflow-y: auto;
+}
+/* 确保卡片内边距不影响滚动条位置 */
+.scene-list-panel {
+    height: auto;
+    min-height: 0;
+}
+
+/* ========== 2. 修复下拉选择框箭头偏移 + 弹窗圆角（仅美化原生 select，下拉面板圆角需更复杂改造） ========== */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b5a3e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;                  /* 给箭头留出空间，避免与文字重叠 */
+    border-radius: 32px !important;       /* 统一圆角 */
+    cursor: pointer;
+}
+/* 针对原生下拉选项框 —— 无法直接修改圆角，但可以通过 outline 或 box-shadow 模拟，此处不做强制 */
+/* 如需完全自定义下拉弹窗，需引入第三方组件，暂时保持原生，但箭头偏移已修复 */
+
+/* 可选：为 select 聚焦添加柔和光效 */
+select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(219,165,65,0.3);
+}
+
+/* ========== 3. 左侧资源库高度自适应 ========== */
+.resource-panel {
+    height: auto;
+    flex: 0 1 auto;                       /* 不拉伸，高度由内容决定 */
+}
+.resource-list {
+    max-height: 220px;                    /* 保留最大高度，超出滚动，内容少时自动收缩 */
+    overflow-y: auto;
+}
+/* ========== 修复分支选项编辑区输入框溢出 ========== */
+.choices-editor {
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    padding: 12px;          /* 保持原有内边距 */
+}
+
+.choice-item {
+    display: flex;
+    flex-wrap: nowrap;      /* 默认不换行，保持一行 */
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 输入框宽度自适应，防止溢出 */
+.choice-item input {
+    flex: 1 1 auto;
+    min-width: 60px;        /* 最小宽度，避免过窄 */
+    width: auto;
+    max-width: calc(100% - 80px);  /* 为按钮预留空间 */
+    box-sizing: border-box;
+}
+
+.choice-item input:first-child {
+    flex: 2 1 120px;        /* 选项文本输入框占比更大 */
+}
+
+.choice-item input:nth-child(2) {
+    flex: 1 1 80px;         /* 跳转索引输入框 */
+}
+
+.choice-item button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* 如果容器过窄（例如手机或侧边栏），则改为垂直排列 */
+@media (max-width: 500px) {
+    .choice-item {
+        flex-wrap: wrap;
+    }
+    .choice-item input, .choice-item button {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+.resource-preview-trigger {
+    cursor: pointer;
+    transition: 0.1s;
+}
+.resource-preview-trigger:hover {
+    background: rgba(219, 165, 65, 0.2);
+    border-radius: 16px;
+}

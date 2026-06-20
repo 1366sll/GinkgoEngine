@@ -1,0 +1,72 @@
+# ── 操作系统自动生成 ──
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── 编辑器 & IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ── Node.js（开发服务器用） ──
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── 临时文件 ──
+*.tmp
+*.temp
+*.bak
+*.log
+
+# ── 环境变量 & 敏感信息 ──
+.env
+.env.local
+.env.*.local
+
+# ── 打包产物 ──
+dist/
+build/
+*.zip
+*.tar.gz
+*.rar
+
+# ── 项目特有 ──
+# Live2D Cubism Core 是 Live2D 专有软件，
+# 如果你没有重新分发授权，请取消下面这行的注释：
+# live2d/core/live2dcubismcore.min.js
+
+# 用户上传的游戏资源和截图
+assets/bg/*.jpg
+assets/bg/*.png
+assets/bg/*.jpeg
+assets/sprites/*.png
+assets/sprites/*.jpg
+assets/bgm/*.mp3
+assets/bgm/*.ogg
+assets/cg/*.jpg
+assets/cg/*.png
+assets/se/*.wav
+assets/se/*.mp3
+assets/voice/*.mp3
+assets/voice/*.ogg
+assets/video/*.mp4
+assets/video/*.webm
+
+# 保留占位说明文件
+!assets/**/README.md
+
+# 用户的项目 JSON（demo 文件除外）
+!demo-project.json

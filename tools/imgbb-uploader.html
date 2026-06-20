@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImgBB 批量上传工具 · Ginkgo Engine</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, 'Noto Serif SC', serif;
+            background: #1a1a2e; color: #e0d8c8;
+            min-height: 100vh; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+
+        h1 {
+            text-align: center; color: #dba541; font-size: 1.4rem;
+            margin-bottom: 6px; font-family: 'ZCOOL XiaoWei', serif;
+            letter-spacing: 2px;
+        }
+        .subtitle { text-align: center; color: #887860; font-size: 0.78rem; margin-bottom: 24px; }
+
+        .section {
+            background: #16213e; border: 1px solid rgba(219,165,65,0.2);
+            border-radius: 12px; padding: 18px 20px; margin-bottom: 14px;
+        }
+        .section h3 { color: #dba541; font-size: 0.9rem; margin-bottom: 10px; }
+
+        label { display: block; color: #b0a890; font-size: 0.78rem; margin-bottom: 4px; }
+        input[type="text"], textarea {
+            width: 100%; background: #0d1117; border: 1px solid #333;
+            border-radius: 8px; padding: 10px 14px; color: #e6e6e6;
+            font-family: 'Courier New', monospace; font-size: 0.85rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus { border-color: #dba541; }
+
+        .drop-zone {
+            border: 2px dashed rgba(219,165,65,0.35); border-radius: 12px;
+            padding: 40px; text-align: center; cursor: pointer;
+            transition: 0.2s; color: #887860;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #dba541; background: rgba(219,165,65,0.05); color: #dba541;
+        }
+        .drop-zone .icon { font-size: 2.4rem; margin-bottom: 8px; }
+
+        .file-list { margin-top: 12px; max-height: 200px; overflow-y: auto; }
+        .file-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 10px; border-radius: 6px;
+            font-size: 0.75rem; font-family: 'Courier New', monospace;
+        }
+        .file-item:nth-child(odd) { background: rgba(255,255,255,0.03); }
+        .file-item .path { color: #b0a890; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-item .status { flex-shrink: 0; margin-left: 12px; font-size: 0.7rem; }
+        .status-pending  { color: #666; }
+        .status-uploading{ color: #dba541; }
+        .status-done     { color: #6adb41; }
+        .status-error    { color: #ff6b6b; }
+
+        .progress-bar-outer {
+            background: #0d1117; border-radius: 8px; height: 8px;
+            margin-top: 10px; overflow: hidden;
+        }
+        .progress-bar-inner {
+            height: 100%; background: linear-gradient(90deg, #dba541, #f0d060);
+            border-radius: 8px; transition: width 0.3s;
+            width: 0%;
+        }
+        .progress-text { font-size: 0.72rem; color: #887860; margin-top: 4px; text-align: right; }
+
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        button {
+            background: #dba541; color: #1a1a2e; border: none;
+            border-radius: 8px; padding: 10px 20px; font-weight: 700;
+            font-family: inherit; cursor: pointer; transition: 0.2s;
+            font-size: 0.85rem;
+        }
+        button:hover:not(:disabled) { background: #f0d060; transform: scale(1.02); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.secondary { background: transparent; border: 1px solid #dba541; color: #dba541; }
+        button.secondary:hover { background: rgba(219,165,65,0.1); }
+
+        .output-area {
+            width: 100%; min-height: 200px; background: #0d1117;
+            border: 1px solid #333; border-radius: 8px; padding: 14px;
+            color: #e6e6e6; font-family: 'Courier New', monospace;
+            font-size: 0.78rem; resize: vertical; outline: none;
+        }
+        .output-area:focus { border-color: #dba541; }
+
+        .tip { font-size: 0.7rem; color: #665; margin-top: 6px; }
+        .tip a { color: #dba541; }
+
+        .stats { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
+        .stat-card {
+            text-align: center; background: #16213e; border-radius: 10px;
+            padding: 12px 20px; border: 1px solid rgba(219,165,65,0.15);
+        }
+        .stat-card .num { font-size: 1.5rem; color: #dba541; font-weight: 700; }
+        .stat-card .label { font-size: 0.7rem; color: #887860; }
+
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🖼️ ImgBB 批量上传工具</h1>
+    <p class="subtitle">将项目图片上传到 ImgBB 图床 · 导出 URL 映射 JSON</p>
+
+    <div class="stats" id="statsRow">
+        <div class="stat-card"><div class="num" id="statQueued">0</div><div class="label">排队中</div></div>
+        <div class="stat-card"><div class="num" id="statDone">0</div><div class="label">已完成</div></div>
+        <div class="stat-card"><div class="num" id="statError">0</div><div class="label">失败</div></div>
+    </div>
+
+    <!-- 1. API Key -->
+    <div class="section">
+        <h3>① ImgBB API Key</h3>
+        <input type="text" id="apiKeyInput" placeholder="从 https://api.imgbb.com/ 获取免费 API Key">
+        <p class="tip">免费注册 → <a href="https://api.imgbb.com/" target="_blank">https://api.imgbb.com/</a> → 获取 key 粘贴到此处</p>
+    </div>
+
+    <!-- 2. File Selection -->
+    <div class="section">
+        <h3>② 选择要上传的图片</h3>
+        <div class="drop-zone" id="dropZone">
+            <div class="icon">📁</div>
+            <div>拖拽图片 / 文件夹到此处，或点击选择</div>
+            <div style="font-size:0.7rem;margin-top:4px;">支持多选 · 保留子目录路径作为 key</div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="image/*" webkitdirectory="">
+        <div class="file-list" id="fileList">
+            <div style="color:#555;text-align:center;padding:10px;">尚未选择文件</div>
+        </div>
+        <div class="btn-row">
+            <button id="selectFilesBtn">📂 选择文件</button>
+            <button id="selectFolderBtn" class="secondary">📁 选择文件夹</button>
+            <button id="clearFilesBtn" class="secondary" disabled>🗑 清空列表</button>
+        </div>
+    </div>
+
+    <!-- 3. Upload -->
+    <div class="section">
+        <h3>③ 开始上传</h3>
+        <div class="btn-row">
+            <button id="startUploadBtn" disabled>🚀 开始上传</button>
+            <button id="stopUploadBtn" class="secondary" disabled>⏹ 停止</button>
+            <button id="retryFailedBtn" class="secondary" disabled>🔄 重试失败项</button>
+        </div>
+        <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">等待上传...</div>
+    </div>
+
+    <!-- 4. Output JSON -->
+    <div class="section">
+        <h3>④ 导出结果</h3>
+        <textarea class="output-area" id="outputJson" readonly
+                  placeholder="上传完成后，JSON 映射将出现在这里..."></textarea>
+        <div class="btn-row">
+            <button id="copyJsonBtn" disabled>📋 复制 JSON</button>
+            <button id="downloadJsonBtn" disabled>💾 下载 imgbb-urls.json</button>
+        </div>
+        <p class="tip">下载的 JSON 放到项目根目录，游戏会自动读取图床链接</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    // --- DOM refs ---
+    const $ = id => document.getElementById(id);
+    const apiKeyInput   = $('apiKeyInput');
+    const fileInput     = $('fileInput');
+    const dropZone      = $('dropZone');
+    const fileList      = $('fileList');
+    const startBtn      = $('startUploadBtn');
+    const stopBtn       = $('stopUploadBtn');
+    const retryBtn      = $('retryFailedBtn');
+    const progressBar   = $('progressBar');
+    const progressText  = $('progressText');
+    const outputJson    = $('outputJson');
+    const copyBtn       = $('copyJsonBtn');
+    const downloadBtn   = $('downloadJsonBtn');
+    const clearBtn      = $('clearFilesBtn');
+    const statQueued    = $('statQueued');
+    const statDone      = $('statDone');
+    const statError     = $('statError');
+
+    // --- State ---
+    let queuedFiles = [];     // [{ file: File, relativePath: string }]
+    let urlMap = {};          // { relativePath: imgbbUrl }
+    let uploadIndex = 0;
+    let stopRequested = false;
+    let activeUploads = 0;
+    const MAX_CONCURRENT = 2;
+
+    // --- Persist API key ---
+    const savedKey = localStorage.getItem('imgbb_api_key');
+    if (savedKey) apiKeyInput.value = savedKey;
+    apiKeyInput.addEventListener('change', () => {
+        localStorage.setItem('imgbb_api_key', apiKeyInput.value.trim());
+    });
+
+    // --- File selection ---
+    function addFiles(files, basePath) {
+        for (const f of files) {
+            const relPath = f.webkitRelativePath || basePath || f.name;
+            // Only images
+            if (!f.type.startsWith('image/')) continue;
+            // Dedup by path
+            if (queuedFiles.some(q => q.relativePath === relPath)) continue;
+            queuedFiles.push({ file: f, relativePath: relPath });
+        }
+        renderFileList();
+        updateUI();
+    }
+
+    function renderFileList() {
+        if (queuedFiles.length === 0) {
+            fileList.innerHTML = '<div style="color:#555;text-align:center;padding:10px;">尚未选择文件</div>';
+        } else {
+            fileList.innerHTML = queuedFiles.map((qf, i) => {
+                const cls = urlMap[qf.relativePath] ? 'status-done' : 'status-pending';
+                const txt = urlMap[qf.relativePath] ? '✓' : '待上传';
+                return `<div class="file-item">
+                    <span class="path" title="${qf.relativePath}">${qf.relativePath}</span>
+                    <span class="status ${cls}">${txt}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        // Try to handle dropped folders via webkitGetAsEntry
+        const items = e.dataTransfer.items;
+        if (items) {
+            const entries = [];
+            for (const item of items) {
+                if (item.kind === 'file') entries.push(item.webkitGetAsEntry());
+            }
+            if (entries.length > 0) {
+                processEntries(entries, '');
+                return;
+            }
+        }
+        addFiles(e.dataTransfer.files, '');
+    });
+
+    function processEntries(entries, basePath) {
+        let pending = entries.length;
+        const files = [];
+        function recurse(entry, path) {
+            if (entry.isFile) {
+                entry.file(f => {
+                    // Attach relativePath-like info
+                    f._relPath = path ? path + '/' + entry.name : entry.name;
+                    files.push(f);
+                    if (--pending === 0) finish();
+                });
+            } else if (entry.isDirectory) {
+                const reader = entry.createReader();
+                reader.readEntries(children => {
+                    for (const child of children) {
+                        pending++;
+                        recurse(child, path ? path + '/' + entry.name : entry.name);
+                    }
+                    if (--pending === 0) finish();
+                });
+            } else {
+                if (--pending === 0) finish();
+            }
+        }
+        function finish() {
+            // Convert to pseudo-FileList-like array for addFiles
+            const fakeList = files.map(f => {
+                // Override webkitRelativePath via property
+                const originalPath = f._relPath || f.name;
+                // We can't actually set webkitRelativePath on a File, so we'll
+                // create a wrapper object that carries the relative path
+                return { file: f, relativePath: originalPath };
+            });
+            // Add directly to queuedFiles
+            for (const item of fakeList) {
+                if (!item.file.type.startsWith('image/')) continue;
+                if (queuedFiles.some(q => q.relativePath === item.relativePath)) continue;
+                queuedFiles.push(item);
+            }
+            renderFileList();
+            updateUI();
+        }
+        for (const entry of entries) recurse(entry, basePath);
+    }
+
+    $('selectFilesBtn').addEventListener('click', () => {
+        fileInput.removeAttribute('webkitdirectory');
+        fileInput.click();
+    });
+    $('selectFolderBtn').addEventListener('click', () => {
+        fileInput.setAttribute('webkitdirectory', '');
+        fileInput.click();
+    });
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            const base = fileInput.getAttribute('webkitdirectory') !== null
+                ? '' : '';
+            addFiles(fileInput.files, base);
+            fileInput.value = '';
+        }
+    });
+    clearBtn.addEventListener('click', () => {
+        queuedFiles = [];
+        urlMap = {};
+        uploadIndex = 0;
+        renderFileList();
+        updateUI();
+    });
+
+    // --- Upload ---
+    async function uploadFile(qf) {
+        const key = apiKeyInput.value.trim();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64 = reader.result.split(',')[1];
+                const form = new FormData();
+                form.append('key', key);
+                form.append('image', base64);
+                // Use filename without extension as the imgbb name
+                const name = qf.relativePath.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '');
+                form.append('name', name);
+
+                try {
+                    const resp = await fetch('https://api.imgbb.com/1/upload', {
+                        method: 'POST', body: form
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        resolve(data.data.url);
+                    } else {
+                        reject(new Error(data.error?.message || 'Upload failed'));
+                    }
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            reader.onerror = () => reject(new Error('File read error'));
+            reader.readAsDataURL(qf.file);
+        });
+    }
+
+    async function runUpload() {
+        stopRequested = false;
+        const key = apiKeyInput.value.trim();
+        if (!key) { alert('请先填入 ImgBB API Key'); return; }
+        const pending = queuedFiles.filter(qf => !urlMap[qf.relativePath]);
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        retryBtn.disabled = true;
+
+        let idx = 0;
+        const total = pending.length;
+        let done = 0, errors = 0;
+
+        async function uploadNext() {
+            if (stopRequested || idx >= total) return;
+            const qf = pending[idx++];
+            // Mark uploading
+            const fileItem = fileList.querySelectorAll('.file-item')[queuedFiles.indexOf(qf)];
+            if (fileItem) {
+                const statusEl = fileItem.querySelector('.status');
+                statusEl.textContent = '↑';
+                statusEl.className = 'status status-uploading';
+            }
+            try {
+                const url = await uploadFile(qf);
+                urlMap[qf.relativePath] = url;
+                done++;
+                if (fileItem) {
+                    const statusEl = fileItem.querySelector('.status');
+                    statusEl.textContent = '✓';
+                    statusEl.className = 'status status-done';
+                }
+            } catch (err) {
+                errors++;
+                console.error(`Upload failed: ${qf.relativePath}`, err);
+                if (fileItem) {
+                    const statusEl = fileItem.querySelector('.status');
+                    statusEl.textContent = '✗';
+                    statusEl.className = 'status status-error';
+                }
+            }
+            // Update stats
+            const remaining = total - idx;
+            statQueued.textContent = remaining;
+            statDone.textContent = done;
+            statError.textContent = errors;
+            const pct = Math.round(((done + errors) / total) * 100);
+            progressBar.style.width = pct + '%';
+            progressText.textContent = `${done + errors}/${total} · 成功 ${done} · 失败 ${errors} · 剩余 ${remaining}`;
+
+            // Update output JSON live
+            outputJson.value = JSON.stringify(urlMap, null, 2);
+            if (Object.keys(urlMap).length > 0) {
+                copyBtn.disabled = false;
+                downloadBtn.disabled = false;
+            }
+
+            // Small delay to respect rate limits
+            await new Promise(r => setTimeout(r, 800));
+            uploadNext();
+        }
+
+        // Start concurrent uploads
+        const concurrency = Math.min(MAX_CONCURRENT, total);
+        const tasks = [];
+        for (let i = 0; i < concurrency; i++) tasks.push(uploadNext());
+        await Promise.all(tasks);
+
+        // Final state
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        if (errors > 0) retryBtn.disabled = false;
+        if (!stopRequested) {
+            progressText.textContent = `完成！成功 ${done} · 失败 ${errors}`;
+        }
+    }
+
+    startBtn.addEventListener('click', runUpload);
+    stopBtn.addEventListener('click', () => {
+        stopRequested = true;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        progressText.textContent = '已停止';
+    });
+    retryBtn.addEventListener('click', () => {
+        // Clear errors from urlMap so they retry
+        const failed = queuedFiles.filter(qf => {
+            const item = [...fileList.querySelectorAll('.file-item')][queuedFiles.indexOf(qf)];
+            return item && item.querySelector('.status').classList.contains('status-error');
+        });
+        failed.forEach(qf => delete urlMap[qf.relativePath]);
+        renderFileList();
+        updateUI();
+        runUpload();
+    });
+
+    // --- Export ---
+    copyBtn.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(outputJson.value);
+        const orig = copyBtn.textContent;
+        copyBtn.textContent = '✅ 已复制！';
+        setTimeout(() => { copyBtn.textContent = orig; }, 1500);
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        const blob = new Blob([outputJson.value], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'imgbb-urls.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    });
+
+    // --- UI helpers ---
+    function updateUI() {
+        const pending = queuedFiles.filter(qf => !urlMap[qf.relativePath]);
+        statQueued.textContent = pending.length;
+        statDone.textContent = Object.keys(urlMap).length;
+        statError.textContent = 0;
+        progressBar.style.width = '0%';
+        progressText.textContent = queuedFiles.length > 0 ? `${queuedFiles.length} 个文件待上传` : '等待上传...';
+
+        startBtn.disabled = pending.length === 0 || !apiKeyInput.value.trim();
+        clearBtn.disabled = queuedFiles.length === 0;
+
+        if (Object.keys(urlMap).length > 0) {
+            outputJson.value = JSON.stringify(urlMap, null, 2);
+            copyBtn.disabled = false;
+            downloadBtn.disabled = false;
+        }
+        retryBtn.disabled = true;
+    }
+})();
+</script>
+</body>
+</html>

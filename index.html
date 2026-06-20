@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ginkgo Engine · Web Galgame Player</title>
+    <link rel="stylesheet" href="css/gal-core.css">
+    <link rel="stylesheet" href="css/gal-beautify.css">
+    <!-- 外部CSS库 (全部使用国内可访问镜像) -->
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6: 矢量图标替代 emoji (南科大 cdnjs 镜像) -->
+    <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <!-- Animate.css: 预设动画库 (南科大 cdnjs 镜像) -->
+    <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#dba541">
+</head>
+<body>
+<div class="game-wrapper" id="gameWrapper">
+    <div class="visual-area">
+        <div class="bg-layer" id="bgLayer"></div>
+        <div class="bg-layer-2" id="bgLayer2"></div>
+        <div class="location-hint" id="locationHint"></div>
+        <div class="location-hint" id="musicHint" style="top: 70px; left: 20px;"></div>
+        <div class="sprite-wrapper" id="spriteWrapper">
+            <img id="characterSprite" src="" alt="立绘">
+            <img id="characterSprite2" src="" alt="立绘" style="position:absolute; bottom:0; right:0; height:100%; width:auto; object-fit:contain; opacity:0; transition: opacity 0.5s ease, filter 0.5s ease; pointer-events:none;">
+        </div>
+        <div class="multi-sprite-container" id="multiSpriteContainer"></div>
+        <div class="vignette-overlay" id="vignetteOverlay"></div>
+        <div class="flash-overlay" id="flashOverlay"></div>
+        <div class="letterbox-overlay" id="letterboxOverlay"></div>
+        <div class="particle-canvas" id="particleContainer"></div>
+        <div class="scene-transition-overlay" id="sceneTransitionOverlay"></div>
+        <div class="skip-indicator" id="skipIndicator"><div class="skip-title" data-i18n-btn="game.ff_active"><i class="fa-solid fa-forward fa-icon-btn"></i> 快进中</div><div class="skip-text"></div></div>
+        <div class="affinity-display" id="affinityDisplay"><span class="affinity-label"></span><div class="affinity-fill-outer"><div class="affinity-fill-inner" style="width:0%"></div></div></div>
+        <div class="loading-indicator" id="loadingIndicator"><div class="loading-spinner"></div><span class="loading-text" data-i18n="game.loading">加载中...</span></div>
+        <div class="choices-container" id="choicesContainer" style="display: none;"></div>
+        <div class="gamepad-indicator" id="gamepadIndicator" title="未检测到手柄"><i class="fa-solid fa-gamepad fa-icon-btn"></i></div>
+    </div>
+    <div class="dialog-area" id="dialogArea">
+        <div class="speaker-name" id="speakerName"><span class="voice-indicator" id="voiceIndicator" style="display:none"><span class="vbar"></span><span class="vbar"></span><span class="vbar"></span><span class="vbar"></span></span></div>
+        <div class="dialog-text" id="dialogText"></div>
+        <!-- 新增：分支选项容器 -->
+        <div class="action-bar" id="actionBar">
+            <div class="action-btn-group">
+                <button class="fast-forward-btn" id="fastForwardBtn" data-i18n-btn="game.fast_forward"><i class="fa-solid fa-forward fa-icon-btn"></i> 快进</button>
+                <button class="skip-read-btn" id="skipReadBtn" data-i18n-btn="game.skip_read"><i class="fa-solid fa-book-open fa-icon-btn"></i> 已读跳过</button>
+                <button class="auto-play-btn" id="autoPlayBtn" data-i18n-btn="game.auto"><i class="fa-solid fa-play fa-icon-btn"></i>自动</button>
+                <button class="skip-chapter-btn" id="skipChapterBtn" data-i18n-btn="game.skip_chapter"><i class="fa-solid fa-forward-step fa-icon-btn"></i>跳至下一章</button>
+                <button class="skip-chapter-btn" id="prevChoiceBtn" data-i18n-btn="game.prev_choice"><i class="fa-solid fa-backward-step fa-icon-btn"></i>上一选项</button>
+                <button class="skip-chapter-btn" id="nextChoiceBtn" data-i18n-btn="game.next_choice"><i class="fa-solid fa-forward-step fa-icon-btn"></i>下一选项</button>
+                <button class="save-game-btn" id="quickSaveBtn" data-i18n-btn="game.quick_save"><i class="fa-solid fa-floppy-disk fa-icon-btn"></i> 快速存档</button>
+                <button class="review-chapter-btn" id="reviewChapterBtn" data-i18n-btn="game.chapter_review"><i class="fa-solid fa-scroll fa-icon-btn"></i> 本章回顾</button>
+            </div>
+            <button class="next-btn" id="nextBtn" data-i18n-btn="game.continue_text"><i class="fa-solid fa-caret-down fa-icon-btn"></i>继续</button>
+        </div>
+    </div>
+
+    <div class="settings-icon" id="settingsIcon"><i class="fa-solid fa-gear fa-icon-btn"></i></div>
+    <button class="fullscreen-btn" id="fullscreenBtn" data-i18n-title="game.fullscreen" title="全屏" style="position:absolute; top:72px; right:20px; z-index:40; opacity:0; pointer-events:none; transition: opacity 0.3s;"><i class="fa-solid fa-maximize fa-icon-btn"></i></button>
+    <div class="settings-page" id="settingsModal">
+        <div class="settings-page-content">
+            <div class="settings-page-header">
+                <div class="settings-page-title" data-i18n="nav.settings">设置</div>
+                <button class="close-settings-page-btn" data-i18n-btn="nav.close" id="closeSettingsBtn"><i class="fa-solid fa-xmark fa-icon-btn"></i>关闭</button>
+            </div>
+            <div class="settings-page-body">
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-music fa-icon-btn"></i> <span data-i18n="settings.sound_toggle">声音开关</span></label>
+                    <button class="toggle-bgm-btn" id="bgmToggleBtn" data-i18n="settings.playing">播放中</button>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-music fa-icon-btn"></i> <span data-i18n="settings.current_music">当前音乐</span></label>
+                    <div class="current-music-display" id="currentMusicDisplay">—</div>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-music fa-icon-btn"></i> <span data-i18n="settings.bgm_volume">BGM音量</span></label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="50">
+                    <span class="volume-value" id="volumeValue">50%</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-volume-high fa-icon-btn"></i> <span data-i18n="settings.se_volume">音效音量</span></label>
+                    <input type="range" id="seVolumeSlider" min="0" max="100" value="80">
+                    <span class="volume-value" id="seVolumeValue">80%</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-microphone fa-icon-btn"></i> <span data-i18n="settings.voice_volume">语音音量</span></label>
+                    <input type="range" id="voiceVolumeSlider" min="0" max="100" value="80">
+                    <span class="volume-value" id="voiceVolumeValue">80%</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-microphone fa-icon-btn"></i> <span data-i18n="settings.voice_ducking">语音闪避强度</span></label>
+                    <input type="range" id="duckingRatioSlider" min="10" max="80" value="30">
+                    <span class="volume-value" id="duckingRatioValue">30%</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-stopwatch fa-icon-btn"></i> <span data-i18n="settings.auto_speed">自动播放速度</span></label>
+                    <input type="range" id="autoPlaySpeedSlider" min="3" max="15" step="1" value="6">
+                    <span id="autoPlaySpeedValue">0.06 秒/字</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-pause fa-icon-btn"></i> <span data-i18n="settings.min_delay">最小间隔(秒)</span></label>
+                    <input type="range" id="minDelaySlider" min="1" max="5" step="0.1" value="1.0">
+                    <span id="minDelayValue">1.0 秒</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-pen-to-square fa-icon-btn"></i> <span data-i18n="settings.text_speed">文字速度</span></label>
+                    <input type="range" id="textSpeedSlider" min="15" max="120" step="5" value="40">
+                    <span id="textSpeedValue">40 ms/字</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-brain fa-icon-btn"></i> <span data-i18n="settings.adaptive_speed">自适应速度</span></label>
+                    <label class="switch-label">
+                        <input type="checkbox" id="adaptiveSpeedCheckbox" checked>
+                        <span class="switch-slider"></span>
+                    </label>
+                    <span style="font-size:0.7rem;color:#887860;" data-i18n="settings.adaptive_speed">根据阅读习惯自动调整文字速度</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-user fa-icon-btn"></i> <span data-i18n="settings.sprite_transition">立绘切换</span></label>
+                    <select id="spriteTransitionSelect" style="background:#2a2418; border:1px solid #dba541; border-radius:20px; padding:6px 12px; color:#f0e0b0; font-family:inherit; cursor:pointer;">
+                        <option value="crossfade" data-i18n="settings.crossfade">交叉淡化</option>
+                        <option value="instant" data-i18n="settings.direct_switch">直接切换</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-rotate-left fa-icon-btn"></i> <span data-i18n="settings.rollback">滚轮回溯</span></label>
+                    <label class="switch-label">
+                        <input type="checkbox" id="rollbackEnabledCheckbox">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-gauge-high fa-icon-btn"></i> <span data-i18n="settings.rollback_speed">回溯速度</span></label>
+                    <input type="range" id="rollbackSpeedSlider" min="100" max="800" step="20" value="300">
+                    <span class="volume-value" id="rollbackSpeedValue">300ms</span>
+                </div>
+                <div class="setting-item full-width">
+                    
+                </div>
+                <div class="setting-item full-width">
+                    <button class="setting-action-btn" id="settingsResetDefaultsBtn" data-i18n-btn="nav.restore_defaults"><i class="fa-solid fa-rotate-left fa-icon-btn"></i> 恢复默认设置</button>
+                </div>
+                <div class="setting-item full-width">
+                    <button class="setting-action-btn" id="settingsSaveBtn" data-i18n-btn="settings.save_progress"><i class="fa-solid fa-floppy-disk fa-icon-btn"></i> 保存游戏进度</button>
+                </div>
+                <div class="setting-item full-width">
+                    <button class="setting-action-btn" id="settingsReturnTitleBtn" data-i18n-btn="nav.back_to_menu"><i class="fa-solid fa-house fa-icon-btn"></i> 返回主菜单</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="title-menu" id="titleMenu">
+        <div class="title-bg-outer" id="titleBgOuter">
+            <div class="title-bg-inner" id="titleBgInner"></div>
+        </div>
+        <div class="menu-container">
+            <div class="menu-title">Ginkgo Engine</div>
+            <div class="menu-buttons">
+                <button id="startGameMainBtn" data-i18n-btn="nav.start_game"><i class="fa-solid fa-play fa-icon-btn"></i>开始游戏</button>
+                <button id="settingsMainBtn" data-i18n-btn="nav.settings"><i class="fa-solid fa-gear fa-icon-btn"></i> 设置</button>
+                <button id="galleryBtn" data-i18n-btn="nav.gallery"><i class="fa-solid fa-image fa-icon-btn"></i> 鉴赏</button>
+                <button id="epilogueMenuBtn" style="display:none;" data-i18n-btn="nav.epilogue">
+                    <i class="fa-solid fa-feather-pointed"></i> 后日谈
+                </button>
+                
+                <button id="exitBtn" data-i18n-btn="nav.exit_game"><i class="fa-solid fa-leaf fa-icon-btn"></i> 结束游戏</button>
+            </div>
+            <!-- 开始游戏子菜单（初始隐藏） -->
+            <div id="startGameSubmenu" class="submenu" style="display: none;">
+                <button id="newGameBtn" data-i18n-btn="nav.new_game"><i class="fa-solid fa-wand-magic-sparkles fa-icon-btn"></i> 新游戏</button>
+                <button id="loadGameBtn" data-i18n-btn="nav.load_game"><i class="fa-solid fa-folder-open fa-icon-btn"></i> 读取存档</button>
+                <button id="chapterSelectMenuBtn" data-i18n-btn="nav.chapter_select"><i class="fa-solid fa-book-open fa-icon-btn"></i >章节选择</button>
+                <button id="continueBtn" data-i18n-btn="nav.continue_game" disabled><i class="fa-solid fa-play fa-icon-btn"></i>继续游戏</button>
+                <button id="backToMainMenuBtn" data-i18n-btn="nav.back" class="back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回</button>
+            </div>
+            <div id="settingsSubmenu" class="submenu" style="display: none;">
+                <button id="projectSettingsBtn" data-i18n-btn="nav.project_mgmt"><i class="fa-solid fa-folder fa-icon-btn"></i> 项目管理</button>
+                <button id="volumeSettingsBtn" data-i18n-btn="nav.volume_settings"><i class="fa-solid fa-volume-high fa-icon-btn"></i> 音量设置</button>
+                <button id="autoPlaySettingsBtn" data-i18n-btn="nav.autoplay_settings"><i class="fa-solid fa-gear fa-icon-btn"></i> 自动播放设置</button>
+                <button id="gamepadSettingsBtn" data-i18n-btn="nav.gamepad_settings"><i class="fa-solid fa-gamepad fa-icon-btn"></i> 手柄设置</button>
+                <button id="hotkeySettingsBtn" data-i18n-btn="nav.hotkey_settings"><i class="fa-solid fa-keyboard fa-icon-btn"></i> 热键设置</button>
+                <button id="settingsSubmenuLangBtn" onclick="var nl=getLang()==='zh'?'en':'zh';setLang(nl);" style="display:block;width:100%;margin-top:6px;padding:8px;background:rgba(219,165,65,0.1);border:1px solid rgba(219,165,65,0.25);border-radius:20px;color:#c8b878;cursor:pointer;font-family:inherit;font-size:0.8rem;"><i class="fa-solid fa-language"></i> <span data-i18n="nav.lang_switch">🌐 中 / EN</span></button>
+                <button id="backToMainMenuBtn2" data-i18n-btn="nav.back_to_menu" class="back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回主菜单</button>
+            </div>
+            <div id="hotkeySubmenu" class="submenu" style="display: none;">
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-keyboard fa-icon-btn"></i> <span data-i18n="settings.next_line_hotkey">下一句热键</span></label>
+                    <input type="text" id="hotkeyInput" maxlength="1" data-i18n-placeholder="settings.click_to_set" placeholder="点击后按任意键" readonly style="width:100px; text-align:center; background:#2a2418; cursor:pointer;">
+                    <span style="font-size:0.75rem; color:#dba541;" data-i18n="settings.click_to_set">(点击输入框后按一个键)</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-forward fa-icon-btn"></i> <span data-i18n="settings.ff_hotkey">快进热键</span></label>
+                    <input type="text" id="fastForwardHotkeyInput" maxlength="1" placeholder="Ctrl" readonly style="width:100px; text-align:center; background:#2a2418; cursor:pointer;">
+                    <span style="font-size:0.75rem; color:#6adb41;" data-i18n="settings.click_to_set">(点击后按任意键)</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-play fa-icon-btn"></i> <span data-i18n="settings.autoplay_hotkey">自动播放热键</span></label>
+                    <input type="text" id="autoPlayHotkeyInput" maxlength="1" placeholder="Alt" readonly style="width:100px; text-align:center; background:#2a2418; cursor:pointer;">
+                    <span style="font-size:0.75rem; color:#8141db;" data-i18n="settings.click_to_set">(点击后按任意键)</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-floppy-disk fa-icon-btn"></i> <span data-i18n="settings.qsave_hotkey">快速存档热键</span></label>
+                    <input type="text" id="quickSaveHotkeyInput" maxlength="1" placeholder="Q" readonly style="width:100px; text-align:center; background:#2a2418; cursor:pointer;">
+                    <span style="font-size:0.75rem; color:#dba541;" data-i18n="settings.click_to_set">(点击后按任意键)</span>
+                </div>
+                <button id="backToSettingsBtn" data-i18n-btn="nav.back_to_settings" class="back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回设置</button>
+            </div>
+            <!-- 项目管理子菜单 -->
+            <div id="projectSubmenu" class="submenu" style="display: none;">
+                <button id="loadProjectBtn" data-i18n-btn="settings.load_project"><i class="fa-solid fa-folder fa-icon-btn"></i> 加载项目文件</button>
+                <button id="exportFullProjectBtn" data-i18n-btn="settings.export_project"><i class="fa-solid fa-file-export fa-icon-btn"></i> 导出完整项目</button>
+                <button id="resetDefaultBtn" data-i18n-btn="settings.reset_demo"><i class="fa-solid fa-rotate fa-icon-btn"></i> 重置内置示例</button>
+                <button id="backToSettingsFromProjectBtn" data-i18n-btn="nav.back_to_settings" class="back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回设置</button>
+            </div>
+
+            <!-- 音量设置子菜单 -->
+            <div id="volumeSubmenu" class="submenu" style="display: none;">
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-music fa-icon-btn"></i> <span data-i18n="settings.bgm_volume">BGM音量</span></label>
+                    <input type="range" id="menuVolumeSlider" min="0" max="100" value="50">
+                    <span id="menuVolumeValue">50%</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-volume-high fa-icon-btn"></i> <span data-i18n="settings.se_volume">音效音量</span></label>
+                    <input type="range" id="menuSeVolumeSlider" min="0" max="100" value="80">
+                    <span id="menuSeVolumeValue">80%</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-microphone fa-icon-btn"></i> <span data-i18n="settings.voice_volume">语音音量</span></label>
+                    <input type="range" id="menuVoiceVolumeSlider" min="0" max="100" value="80">
+                    <span id="menuVoiceVolumeValue">80%</span>
+                </div>
+                <button id="backToSettingsFromVolumeBtn" data-i18n-btn="nav.back_to_settings" class="back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回设置</button>
+            </div>
+            <!-- 自动播放设置子菜单 -->
+            <div id="autoPlaySubmenu" class="submenu" style="display: none;">
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-stopwatch fa-icon-btn"></i> <span data-i18n="settings.auto_speed">每字延迟(秒)</span></label>
+                    <input type="range" id="menuAutoPlaySpeedSlider" min="3" max="15" step="1" value="6">
+                    <span id="menuAutoPlaySpeedValue">0.06 秒/字</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-pause fa-icon-btn"></i> <span data-i18n="settings.min_delay">最小间隔(秒)</span></label>
+                    <input type="range" id="menuMinDelaySlider" min="1" max="5" step="0.1" value="1.0">
+                    <span id="menuMinDelayValue">1.0 秒</span>
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-pen-to-square fa-icon-btn"></i> <span data-i18n="settings.text_speed">打字速度</span></label>
+                    <input type="range" id="menuTextSpeedSlider" min="15" max="120" step="5" value="40">
+                    <span id="menuTextSpeedValue">40 ms/字</span>
+                </div>
+                <button id="backToSettingsFromAutoPlayBtn" data-i18n-btn="nav.back_to_settings" class="back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回设置</button>
+            </div>
+            <!-- 手柄设置子菜单 -->
+            <div id="gamepadSubmenu" class="submenu" style="display: none;">
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-gamepad fa-icon-btn"></i> <span data-i18n="settings.enable_gamepad">启用手柄</span></label>
+                    <label class="switch-label">
+                        <input type="checkbox" id="gamepadEnabledCheckbox" checked>
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                    <label style="font-size:0.85rem;color:#b0a890;" data-i18n="settings.gamepad_guide">手柄按键说明（Xbox / 标准布局）</label>
+                    <div style="font-size:0.78rem;color:#888;line-height:1.8;">
+                        <kbd>A</kbd> = 继续对话/确认 &nbsp; <kbd>B</kbd> = 返回 / 菜单<br>
+                        <kbd>X</kbd> = 自动播放 &nbsp; <kbd>Y</kbd> = 快进<br>
+                        <kbd>LB</kbd> = 上一选项 &nbsp; <kbd>RB</kbd> = 下一选项<br>
+                        <kbd>←→↑↓</kbd> = 导航选项 &nbsp; <kbd><i class="fa-solid fa-bars fa-icon-btn"></i></kbd> = 打开菜单<br>
+                        <kbd>◳</kbd> = 对话记录
+                    </div>
+                </div>
+                <button id="backToSettingsFromGamepadBtn" data-i18n-btn="nav.back_to_settings" class="back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回设置</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-page" id="savePage">
+        <div class="save-page-content">
+            <div class="save-page-header">
+                    <div class="save-page-title" data-i18n="save.save_page">存档页面</div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="back-btn" data-i18n-btn="save.share" id="shareCodeBtn" style="font-size:0.75rem;"><i class="fa-solid fa-share-nodes"></i> 分享</button>
+                        <button class="back-btn" data-i18n-btn="save.import_share" id="loadShareCodeBtn" style="font-size:0.75rem;"><i class="fa-solid fa-download"></i> 导入</button>
+                        <button class="close-save-page-btn" data-i18n-btn="nav.close" id="closeSavePageBtn"><i class="fa-solid fa-xmark fa-icon-btn"></i>关闭</button>
+                    </div>
+            </div>
+            <div class="save-page-body">
+                <div class="left-panel">
+                    <div class="save-slot auto-slot large" id="autoSaveSlot">
+                        <div class="save-slot-label" data-i18n="save.auto_save">快速 / 自动存档</div>
+                        <div class="save-slot-preview" id="autoSavePreview" data-i18n="save.no_save">当前无存档</div>
+                        <div class="save-slot-meta" style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px;">
+                            <div class="save-slot-info" id="autoSaveInfo"></div>
+                            <div class="save-slot-actions small-actions">
+                                <button class="load-slot-btn" id="loadAutoSaveBtn" data-i18n="save.load_btn">读取</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="right-panel">
+                    <div class="save-slots-column" id="saveSlotsColumn">
+                        <div class="save-slots-grid" id="saveSlotsGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chapter-transition" id="chapterTransition">
+        <div class="chapter-name" id="transChapterName" data-i18n="game.chapter_default">序章</div>
+        <div class="chapter-sub" id="transChapterSub">Chapter Subtitle</div>
+    </div>
+    <div class="video-overlay" id="videoOverlay">
+        <video id="videoPlayer" playsinline webkit-playsinline style="width:100%; height:100%; object-fit:contain;"></video>
+        <div class="video-hint" id="videoHint" data-i18n="game.click_skip_video">点击跳过视频</div>
+    </div>
+    <div class="cg-layer" id="cgLayer">
+        <div class="cg-nav-arrow cg-prev" id="cgPrevBtn" style="display:none;">◀</div>
+        <div class="cg-nav-arrow cg-next" id="cgNextBtn" style="display:none;">▶</div>
+        <img class="cg-image" id="cgImage" src="" alt="CG">
+        <div class="cg-hint" data-i18n="game.click_close_cg">点击任意处关闭 CG</div>
+    </div>
+    <div class="backlog-overlay" id="backlogOverlay">
+        <div class="backlog-panel">
+            <div class="backlog-header">
+                <h2 data-i18n-btn="game.context_backlog"><i class="fa-solid fa-book-open fa-icon-btn"></i> 对话记录</h2>
+                <button class="backlog-close-btn" data-i18n-btn="nav.close" id="backlogCloseBtn"><i class="fa-solid fa-xmark fa-icon-btn"></i>关闭</button>
+            </div>
+            <div class="backlog-list" id="backlogList">
+                <div class="backlog-hint" data-i18n="game.no_dialog">暂无对话记录</div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 右键上下文菜单 -->
+<div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" data-i18n-btn="game.context_qsave" data-action="save"><i class="fa-solid fa-floppy-disk fa-icon-btn"></i> 快速存档</div>
+    <div class="context-menu-item" data-action="load"><i class="fa-solid fa-folder-open fa-icon-btn"></i> 快速读档</div>
+    <div class="context-menu-item" data-action="share"><i class="fa-solid fa-share-nodes"></i> 分享当前状态</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="auto"><i class="fa-solid fa-play fa-icon-btn"></i>自动播放</div>
+    <div class="context-menu-item" data-action="skip"><i class="fa-solid fa-forward fa-icon-btn"></i> 快进</div>
+    <div class="context-menu-item" data-action="skipread"><i class="fa-solid fa-book-open fa-icon-btn"></i> 已读跳过</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="prevchoice"><i class="fa-solid fa-backward-step fa-icon-btn"></i>上一选项</div>
+    <div class="context-menu-item" data-action="nextchoice"><i class="fa-solid fa-forward-step fa-icon-btn"></i>下一选项</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="backlog"><i class="fa-solid fa-scroll fa-icon-btn"></i> 对话记录</div>
+    <div class="context-menu-item" data-action="settings"><i class="fa-solid fa-gear fa-icon-btn"></i> 设置</div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="title"><i class="fa-solid fa-house fa-icon-btn"></i> 返回标题</div>
+</div>
+<!-- 章节选择浮层 -->
+<div class="chapter-select-overlay" id="chapterSelectOverlay">
+    <div class="chapter-select-panel" id="chapterSelectPanel">
+        <h2 data-i18n-btn="nav.chapter_select"><i class="fa-solid fa-book-open fa-icon-btn"></i> 章节选择</h2>
+        <div id="chapterSelectList"></div>
+        <button class="chapter-select-back" data-i18n-btn="nav.back" id="chapterSelectBackBtn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回</button>
+    </div>
+</div>
+<!-- 独立鉴赏页面（全屏，类似新页面） -->
+<div id="galleryPage" class="gallery-page" style="display: none;">
+    <div class="gallery-header">
+        <h2><i class="fa-solid fa-palette fa-icon-btn"></i data-i18n="gallery.title"> 鉴赏室</h2>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <button class="gallery-cover-settings-btn" data-i18n-btn="gallery.cover_settings" id="openCoverSettingsBtn"><i class="fa-solid fa-palette fa-icon-btn"></i> 封面设置</button>
+            <button data-i18n-btn="nav.back_to_menu" id="closeGalleryPageBtn" class="gallery-back-btn"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回主菜单</button>
+        </div>
+    </div>
+    <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
+        <div class="gallery-tabs" style="margin-bottom:0;">
+            <button class="gallery-tab active" data-i18n-btn="gallery.tab_cg" data-tab="cg"><i class="fa-solid fa-images fa-icon-btn"></i> CG</button>
+            <button class="gallery-tab" data-i18n-btn="gallery.tab_sprites" data-tab="sprites"><i class="fa-solid fa-users fa-icon-btn"></i> 人物立绘</button>
+            <button class="gallery-tab" data-i18n-btn="gallery.tab_bg" data-tab="bg"><i class="fa-solid fa-image fa-icon-btn"></i> 背景</button>
+            <button class="gallery-tab" data-i18n-btn="gallery.tab_music" data-tab="music"><i class="fa-solid fa-music fa-icon-btn"></i> 音乐</button>
+            <button class="gallery-tab" data-i18n-btn="gallery.tab_endings" data-tab="endings"><i class="fa-solid fa-trophy fa-icon-btn"></i> 结局</button>
+            <button class="gallery-tab" data-i18n-btn="gallery.tab_achievements" data-tab="achievements"><i class="fa-solid fa-medal fa-icon-btn"></i> 成就</button>
+            <button class="gallery-tab" data-i18n-btn="gallery.tab_flowchart" data-tab="flowchart"><i class="fa-solid fa-map fa-icon-btn"></i> 路线图</button>
+        </div>
+    </div>
+    <div id="galleryNowPlaying" style="text-align:center;color:#b0a890;font-size:0.85rem;margin-bottom:12px;"></div>
+    <div class="gallery-grid-container" id="galleryGridContainer">
+        <!-- 动态内容 -->
+    </div>
+    <div class="cover-settings-page" id="coverSettingsPage" style="display:none;">
+        <div class="section-block">
+            <h3><i class="fa-solid fa-image fa-icon-btn"></i data-i18n="settings.cover_image"> 封面图片</h3>
+            <div class="cover-option-row">
+                <label data-i18n="settings.cover_mode">选择模式：</label>
+                <select id="coverImageMode">
+                    <option value="lastCG" data-i18n-btn="settings.cover_last_cg">最近获得的CG</option>
+                    <option value="randomCandidates" data-i18n-btn="settings.cover_candidates">从候选CG中随机</option>
+                    <option value="randomAll" data-i18n="settings.cover_random">全随机</option>
+                </select>
+            </div>
+            <div id="coverCGCandidatesList" style="margin-top:10px;"></div>
+        </div>
+        <div class="section-block">
+            <h3><i class="fa-solid fa-music fa-icon-btn"></i data-i18n="settings.cover_music"> 封面音乐</h3>
+            <div class="cover-option-row">
+                <label data-i18n="settings.cover_mode">选择模式：</label>
+                <select id="coverBgmMode">
+                    <option value="lastBGM" data-i18n-btn="settings.cover_last_bgm">最近播放的BGM</option>
+                    <option value="randomCandidates" data-i18n-btn="settings.cover_candidates_bgm">从候选BGM中随机</option>
+                    <option value="randomAll">全随机</option>
+                </select>
+            </div>
+            <div id="coverBGMCandidatesList" style="margin-top:10px;"></div>
+        </div>
+        <div style="text-align:center; margin-top:20px;">
+            <button data-i18n-btn="settings.apply_cover" id="applyCoverSettingsBtn" class="gallery-back-btn">应用设置</button>
+            <button data-i18n-btn="settings.back_gallery" id="backFromCoverSettingsBtn" class="gallery-back-btn" style="margin-left:12px;"><i class="fa-solid fa-arrow-left fa-icon-btn"></i>返回鉴赏</button>
+        </div>
+    </div>
+</div>
+<div class="flowchart-tooltip" id="flowchartTooltip"></div>
+<div id="saveToast" class="save-toast">✓ 游戏已存档</div>
+
+<!-- 外部JS库 (全部使用国内可访问镜像，必须先加载供引擎使用) -->
+<!-- Howler.js: 高级音频引擎 (南科大 cdnjs 镜像) -->
+<script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/howler/2.2.4/howler.min.js"></script>
+<!-- GSAP: 专业动画引擎 (南科大 cdnjs 镜像) -->
+<script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<!-- tsParticles: 粒子特效引擎 (jsdmirror 国内镜像, 避免浏览器追踪防护警告) -->
+<script src="https://cdn.jsdmirror.com/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+    <!-- I18N 国际化 -->
+    <script src="js/i18n.js"></script>
+    <!-- 图床链接映射：同步加载 JSON，阻塞执行确保引擎启动前就绪 -->
+    <script>
+    var __imgbbUrls = {};
+    try {
+        var _xhr = new XMLHttpRequest();
+        _xhr.open('GET', 'imgbb-urls.json', false); // sync XHR — 必须在引擎初始化前完成
+        _xhr.send();
+        if (_xhr.status === 200) {
+            __imgbbUrls = JSON.parse(_xhr.responseText);
+            console.log('[ImgBB] ✅ 已加载图床映射，共 ' + Object.keys(__imgbbUrls).length + ' 条');
+        }
+    } catch(e) {
+        console.log('[ImgBB] ⚠ 未找到 imgbb-urls.json，将使用本地路径');
+    }
+    </script>
+    <!-- 游戏引擎模块 (按依赖顺序加载) -->
+    <script src="js/config.js"></script>
+    <!-- 将 assetConfig 中的本地路径替换为图床 URL（必须在 config.js 之后、storage.js 之前） -->
+    <script>
+    (function patchAssetConfig() {
+        if (Object.keys(__imgbbUrls).length === 0) return;
+        if (typeof assetConfig === 'undefined') return;
+
+        // 构建逆向映射：ImgBB URL → 原始本地路径（鉴赏页面分组需要）
+        window._imgbbReverse = window._imgbbReverse || {};
+        for (var _rkey in __imgbbUrls) {
+            window._imgbbReverse[__imgbbUrls[_rkey]] = _rkey;
+        }
+
+        function _patch(obj) {
+            if (!obj) return;
+            for (var key in obj) {
+                var localPath = obj[key];
+                if (typeof localPath === 'string' && __imgbbUrls[localPath]) {
+                    obj[key] = __imgbbUrls[localPath];
+                }
+            }
+        }
+        _patch(assetConfig.bg);
+        _patch(assetConfig.sprites);
+        _patch(assetConfig.cg);
+        // 如果有 video poster 等也一并处理
+        if (assetConfig.video) {
+            for (var vk in assetConfig.video) {
+                var v = assetConfig.video[vk];
+                if (typeof v === 'string' && __imgbbUrls[v]) assetConfig.video[vk] = __imgbbUrls[v];
+            }
+        }
+        console.log('[ImgBB] ✅ assetConfig 已替换为图床链接（逆向映射 ' + Object.keys(window._imgbbReverse).length + ' 条）');
+    })();
+    </script>
+    <script src="js/storage.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/gamepad.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- ========== 后日谈解锁 & 入口按钮 ========== -->
+    <script>
+    (function() {
+        var EPILOGUE_KEY = 'galgame_epilogue_unlocked';
+        var EPILOGUE_ENDING_KEY = 'galgame_last_ending';
+        var btn = document.getElementById('epilogueMenuBtn');
+
+        // 跳转到后日谈，携带结局信息
+        function goToEpilogue() {
+            var endingKey = localStorage.getItem(EPILOGUE_ENDING_KEY) || '';
+            var url = 'epilogue.html';
+            if (endingKey) url += '?ending=' + encodeURIComponent(endingKey);
+            var choiceHistory = [];
+            try { choiceHistory = JSON.parse(localStorage.getItem('galgame_choice_history') || '[]'); } catch(e) {}
+            if (choiceHistory.length > 0) {
+                url += (endingKey ? '&' : '?') + 'choices=' + encodeURIComponent(JSON.stringify(choiceHistory.slice(-10)));
+            }
+            window.location.href = url;
+        }
+
+        if (btn) btn.addEventListener('click', goToEpilogue);
+
+        // 页面加载时检查是否已解锁
+        function checkUnlock() {
+            if (localStorage.getItem(EPILOGUE_KEY) === 'true') {
+                if (btn) btn.style.display = '';
+            }
+        }
+
+        // 结局触发时自动解锁 + 存储结局key
+        function hookEnding() {
+            var orig = window.unlockEnding;
+            if (typeof orig === 'function') {
+                window.unlockEnding = function(key, title) {
+                    orig.apply(this, arguments);
+                    localStorage.setItem(EPILOGUE_ENDING_KEY, key || '');
+                    if (title) localStorage.setItem('galgame_last_ending_title', title);
+                    if (localStorage.getItem(EPILOGUE_KEY) !== 'true') {
+                        localStorage.setItem(EPILOGUE_KEY, 'true');
+                        if (btn) btn.style.display = '';
+                        if (typeof showToast === 'function') {
+                            showToast(t('epilogue.unlock_toast'));
+                        }
+                    }
+                };
+            }
+        }
+
+        // 浏览器控制台手动解锁（调试用）
+        window.unlockEpilogue = function() {
+            localStorage.setItem(EPILOGUE_KEY, 'true');
+            if (btn) btn.style.display = '';
+            console.log(t('epilogue.unlock_console'));
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkUnlock();
+            hookEnding();
+        });
+    })();
+    </script>
+
+    <!-- ========== 作弊控制台 ========== -->
+    <style>
+        /* 作弊控制台浮层 */
+        .cheat-console-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
+            z-index: 10000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .cheat-console-overlay.active {
+            opacity: 1; pointer-events: auto;
+        }
+        .cheat-console-panel {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border: 2px solid #dba541; border-radius: 16px;
+            padding: 28px 32px; width: 520px; max-width: 92vw;
+            box-shadow: 0 0 40px rgba(219,165,65,0.25), 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .cheat-console-title {
+            color: #dba541; font-family: 'ZCOOL XiaoWei', serif;
+            font-size: 1.3rem; text-align: center; margin-bottom: 6px;
+            letter-spacing: 3px;
+        }
+        .cheat-console-subtitle {
+            color: #887860; font-size: 0.75rem; text-align: center;
+            margin-bottom: 20px;
+        }
+        .cheat-input-row {
+            display: flex; gap: 10px; margin-bottom: 18px;
+        }
+        .cheat-input {
+            flex: 1; background: #0d1117; border: 1px solid #dba541;
+            border-radius: 10px; padding: 10px 16px; color: #e6e6e6;
+            font-family: 'Courier New', monospace; font-size: 1rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .cheat-input:focus { border-color: #f0d060; box-shadow: 0 0 8px rgba(219,165,65,0.3); }
+        .cheat-input::placeholder { color: #555; }
+        .cheat-execute-btn {
+            background: #dba541; color: #1a1a2e; border: none;
+            border-radius: 10px; padding: 10px 20px; font-weight: 700;
+            font-family: inherit; cursor: pointer; transition: 0.2s;
+            white-space: nowrap;
+        }
+        .cheat-execute-btn:hover { background: #f0d060; transform: scale(1.03); }
+        .cheat-hint-grid {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+        }
+        .cheat-hint-chip {
+            background: rgba(219,165,65,0.12); border: 1px solid rgba(219,165,65,0.25);
+            border-radius: 20px; padding: 5px 14px; color: #c8b878;
+            font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+        .cheat-hint-chip:hover { background: rgba(219,165,65,0.25); color: #f0d060; }
+        .cheat-close-hint {
+            text-align: center; color: #665; font-size: 0.7rem;
+            margin-top: 16px;
+        }
+        .cheat-toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, #1a1a2e, #0f3460);
+            border: 1.5px solid #dba541; border-radius: 12px;
+            padding: 12px 28px; color: #f0d060; z-index: 10001;
+            font-family: 'ZCOOL XiaoWei', serif; font-size: 1rem;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            box-shadow: 0 4px 20px rgba(219,165,65,0.3);
+        }
+        .cheat-toast.show { opacity: 1; }
+
+        /* 制作人员名单 — 影院式自动滚动 */
+        .credits-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 10002;
+            overflow: hidden;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .credits-overlay.show { opacity: 1; pointer-events: auto; }
+        .credits-roll {
+            position: absolute; left: 0; width: 100%;
+            text-align: center; color: #f0e0b0;
+            font-family: 'Noto Serif SC', serif;
+            padding: 100vh 20px 80px;
+            animation: creditsRollUp 32s linear forwards;
+        }
+        @keyframes creditsRollUp {
+            0%   { transform: translateY(0); }
+            8%   { transform: translateY(0); }
+            100% { transform: translateY(-100%); }
+        }
+        .credits-title { font-size: 2.2rem; color: #ffd700; font-weight: 900; margin-bottom: 4px; letter-spacing: 6px; font-family: 'ZCOOL XiaoWei', serif; }
+        .credits-subtitle { font-size: 1rem; color: #dba541; margin-bottom: 40px; letter-spacing: 4px; }
+        .credits-section { margin-bottom: 28px; }
+        .credits-role { font-size: 0.75rem; color: #dba541; letter-spacing: 3px; margin-bottom: 6px; text-transform: uppercase; }
+        .credits-name { font-size: 1.05rem; color: #f0e8d0; margin-bottom: 2px; }
+        .credits-note { font-size: 0.72rem; color: #887860; margin-top: 2px; }
+        .credits-end { font-size: 1.3rem; color: #ffd700; margin-top: 50px; letter-spacing: 4px; font-family: 'ZCOOL XiaoWei', serif; }
+        .credits-end-note { font-size: 0.8rem; color: #b0a080; margin-top: 8px; padding-bottom: 80px; }
+    </style>
+
+    <!-- 作弊控制台浮层 -->
+    <div class="cheat-console-overlay" id="cheatConsoleOverlay">
+        <div class="cheat-console-panel">
+            <div class="cheat-console-title" data-i18n="cheat.title">🔧 开发者控制台</div>
+            <div class="cheat-console-subtitle" data-i18n="cheat.subtitle">输入指令以解锁内容 · 按 ESC 或点击外部关闭</div>
+            <div class="cheat-input-row">
+                <input class="cheat-input" id="cheatInput" type="text"
+                       data-i18n-placeholder="cheat.placeholder"
+                       placeholder="输入指令，如 epilogue ..." autofocus>
+                <button class="cheat-execute-btn" id="cheatExecuteBtn" data-i18n="cheat.execute">执行</button>
+            </div>
+            <div class="cheat-hint-grid">
+                <span class="cheat-hint-chip" data-cmd="epilogue" data-i18n="cheat.cmd_epilogue">epilogue</span>
+                <span class="cheat-hint-chip" data-cmd="gallery" data-i18n="cheat.cmd_gallery">gallery</span>
+                <span class="cheat-hint-chip" data-cmd="achievement" data-i18n="cheat.cmd_achievement">achievement</span>
+                <span class="cheat-hint-chip" data-cmd="cg" data-i18n="cheat.cmd_cg">cg</span>
+                <span class="cheat-hint-chip" data-cmd="sprites" data-i18n="cheat.cmd_sprites">sprites</span>
+                <span class="cheat-hint-chip" data-cmd="bgm" data-i18n="cheat.cmd_bgm">bgm</span>
+                <span class="cheat-hint-chip" data-cmd="bg" data-i18n="cheat.cmd_bg">bg</span>
+                <span class="cheat-hint-chip" data-cmd="endings" data-i18n="cheat.cmd_endings">endings</span>
+                <span class="cheat-hint-chip" data-cmd="all" data-i18n="cheat.cmd_all">all</span>
+                <span class="cheat-hint-chip" data-cmd="egg" data-i18n="cheat.cmd_egg" style="background:rgba(255,215,0,0.08);border-color:rgba(255,215,0,0.2);color:#ffd700;">egg</span>
+                <span class="cheat-hint-chip" data-cmd="credits" data-i18n="cheat.cmd_credits" style="background:rgba(180,160,255,0.08);border-color:rgba(180,160,255,0.2);color:#c8b8ff;">credits</span>
+            </div>
+            <div class="cheat-close-hint"><span data-i18n-html="cheat.close_hint">按 ` 键开关控制台</span></div>
+        </div>
+    </div>
+    <div class="cheat-toast" id="cheatToast"></div>
+
+    <!-- 制作人员名单 -->
+    <div class="credits-overlay" id="creditsOverlay">
+        <div class="credits-roll" id="creditsRoll">
+            <!-- Credits content is configured via window.GinkgoCredits,
+                 defaults to Ginkgo Engine credits if not set -->
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var overlay = document.getElementById('cheatConsoleOverlay');
+        var input = document.getElementById('cheatInput');
+        var executeBtn = document.getElementById('cheatExecuteBtn');
+        var cheatToast = document.getElementById('cheatToast');
+        var cheatToastTimer = null;
+
+        // ── 默认制作人员名单（项目可通过 GinkgoCredits 自定义）──
+        // 使用 i18n key 自动翻译
+        function _buildDefaultCredits() {
+            return [
+                { role: '', name: t('credits.title'), className: 'credits-title' },
+                { role: '', name: t('credits.subtitle'), className: 'credits-subtitle' },
+                null,
+                { role: t('credits.engine_label'), name: t('credits.engine_name'), note: t('credits.engine_note') },
+                { role: t('credits.thanks_label'), name: t('credits.thanks_1'), note: '' },
+                { role: '', name: t('credits.thanks_2'), note: '' },
+                { role: '', name: t('credits.thanks_3'), note: '' },
+                { role: '', name: t('credits.thanks_4'), note: '' },
+                null,
+                { role: '', name: t('credits.end_line'), className: 'credits-end' },
+                { role: '', name: t('credits.end_note'), className: 'credits-end-note' }
+            ];
+        }
+
+        function buildCreditsHTML(creditsData) {
+            var html = '';
+            (creditsData || DEFAULT_CREDITS).forEach(function(item) {
+                if (!item) { html += '<br>'; return; }
+                var cls = item.className || 'credits-name';
+                html += '<div class="credits-section">';
+                if (item.role) html += '<div class="credits-role">' + item.role + '</div>';
+                html += '<div class="' + cls + '">' + item.name + '</div>';
+                if (item.note) html += '<div class="credits-note">' + item.note + '</div>';
+                html += '</div>';
+            });
+            return html;
+        }
+
+        function initCredits() {
+            var roll = document.getElementById('creditsRoll');
+            if (!roll) return;
+            var data = window.GinkgoCredits || _buildDefaultCredits();
+            roll.innerHTML = buildCreditsHTML(data);
+        }
+
+        function showCheatToast(msg) {
+            if (cheatToastTimer) clearTimeout(cheatToastTimer);
+            cheatToast.textContent = msg;
+            cheatToast.classList.add('show');
+            cheatToastTimer = setTimeout(function() {
+                cheatToast.classList.remove('show');
+            }, 2500);
+        }
+
+        function unlockAllCG() {
+            var allKeys = Object.keys(assetConfig && assetConfig.cg ? assetConfig.cg : {});
+            if (typeof unlockedCgs !== 'undefined') {
+                allKeys.forEach(function(k) { if (unlockedCgs.indexOf(k) < 0) unlockedCgs.push(k); });
+                if (typeof saveUnlocked === 'function') saveUnlocked();
+            } else {
+                localStorage.setItem('galgame_unlocked_cgs', JSON.stringify(allKeys));
+            }
+            return allKeys.length;
+        }
+
+        function unlockAllSprites() {
+            var allKeys = Object.keys(assetConfig && assetConfig.sprites ? assetConfig.sprites : {});
+            if (typeof unlockedSprites !== 'undefined') {
+                allKeys.forEach(function(k) { if (unlockedSprites.indexOf(k) < 0) unlockedSprites.push(k); });
+                if (typeof saveUnlocked === 'function') saveUnlocked();
+            } else {
+                localStorage.setItem('galgame_unlocked_sprites', JSON.stringify(allKeys));
+            }
+            return allKeys.length;
+        }
+
+        function unlockAllBGM() {
+            var allKeys = Object.keys(assetConfig && assetConfig.bgm ? assetConfig.bgm : {});
+            if (typeof unlockedBgms !== 'undefined') {
+                allKeys.forEach(function(k) { if (unlockedBgms.indexOf(k) < 0) unlockedBgms.push(k); });
+                if (typeof saveUnlocked === 'function') saveUnlocked();
+            } else {
+                localStorage.setItem('galgame_unlocked_bgms', JSON.stringify(allKeys));
+            }
+            return allKeys.length;
+        }
+
+        function unlockAllBG() {
+            var allKeys = Object.keys(assetConfig && assetConfig.bg ? assetConfig.bg : {});
+            if (typeof unlockedBgs !== 'undefined') {
+                allKeys.forEach(function(k) { if (unlockedBgs.indexOf(k) < 0) unlockedBgs.push(k); });
+                if (typeof saveUnlocked === 'function') saveUnlocked();
+            } else {
+                localStorage.setItem('galgame_unlocked_bgs', JSON.stringify(allKeys));
+            }
+            return allKeys.length;
+        }
+
+        function unlockAllEndings() {
+            var endingKeys = [];
+            if (typeof currentScenes !== 'undefined' && currentScenes.length > 0) {
+                var seen = {};
+                for (var i = 0; i < currentScenes.length; i++) {
+                    var s = currentScenes[i];
+                    if (s && s.endingKey && !seen[s.endingKey]) {
+                        seen[s.endingKey] = true;
+                        endingKeys.push(s.endingKey);
+                    }
+                }
+            }
+            if (typeof unlockedEndings !== 'undefined') {
+                var timestamps = {};
+                try { timestamps = JSON.parse(localStorage.getItem('galgame_ending_timestamps') || '{}'); } catch(e) {}
+                endingKeys.forEach(function(k) {
+                    if (unlockedEndings.indexOf(k) < 0) {
+                        unlockedEndings.push(k);
+                        timestamps[k] = Date.now();
+                    }
+                });
+                localStorage.setItem('galgame_unlocked_endings', JSON.stringify(unlockedEndings));
+                localStorage.setItem('galgame_ending_timestamps', JSON.stringify(timestamps));
+                if (typeof endingTimestamps !== 'undefined') {
+                    endingTimestamps = timestamps;
+                }
+            } else {
+                localStorage.setItem('galgame_unlocked_endings', JSON.stringify(endingKeys));
+                var t2 = {};
+                endingKeys.forEach(function(k) { t2[k] = Date.now(); });
+                localStorage.setItem('galgame_ending_timestamps', JSON.stringify(t2));
+            }
+            return endingKeys.length;
+        }
+
+        function unlockAllAchievements() {
+            var achIds;
+            if (typeof ACHIEVEMENTS !== 'undefined') {
+                achIds = ACHIEVEMENTS.map(function(a) { return a.id; });
+            } else {
+                achIds = ["story_begin","first_choice","collector_cg","bgm_lover",
+                          "scenes_10","scenes_30","affection_50","variable_master",
+                          "backlog_user","save_user","ending_first","all_endings",
+                          "rollback_user","video_watcher"];
+            }
+            if (typeof unlockedAchievements !== 'undefined') {
+                achIds.forEach(function(id) {
+                    if (unlockedAchievements.indexOf(id) < 0) unlockedAchievements.push(id);
+                });
+                if (typeof _lastCheckedAchSet !== 'undefined') {
+                    achIds.forEach(function(id) { _lastCheckedAchSet.add(id); });
+                }
+                localStorage.setItem('galgame_achievements', JSON.stringify(unlockedAchievements));
+            } else {
+                localStorage.setItem('galgame_achievements', JSON.stringify(achIds));
+            }
+            return achIds.length;
+        }
+
+        function unlockEpilogue() {
+            localStorage.setItem('galgame_epilogue_unlocked', 'true');
+            var btn = document.getElementById('epilogueMenuBtn');
+            if (btn) btn.style.display = '';
+            return true;
+        }
+
+        function executeCheat(cmd) {
+            cmd = (cmd || '').trim().toLowerCase();
+            if (!cmd) return;
+
+            var msg = '';
+            switch (cmd) {
+                case 'epilogue':
+                    unlockEpilogue();
+                    msg = t('cheat.epilogue_unlocked');
+                    break;
+                case 'gallery':
+                    var n1 = unlockAllCG();
+                    var n2 = unlockAllSprites();
+                    var n3 = unlockAllBGM();
+                    var n4 = unlockAllBG();
+                    var n5 = unlockAllEndings();
+                    msg = t('cheat.gallery_all', n1, n2, n3, n4, n5);
+                    break;
+                case 'achievement':
+                    var na = unlockAllAchievements();
+                    msg = t('cheat.ach_all', na);
+                    break;
+                case 'cg':
+                    var nc = unlockAllCG();
+                    msg = t('cheat.cg_all', nc);
+                    break;
+                case 'sprites':
+                    var ns = unlockAllSprites();
+                    msg = t('cheat.sprites_all', ns);
+                    break;
+                case 'bgm':
+                    var nb = unlockAllBGM();
+                    msg = t('cheat.bgm_all', nb);
+                    break;
+                case 'bg':
+                    var nbg = unlockAllBG();
+                    msg = t('cheat.bg_all', nbg);
+                    break;
+                case 'endings':
+                    var ne = unlockAllEndings();
+                    msg = t('cheat.endings_all', ne);
+                    break;
+                case 'all':
+                    unlockEpilogue();
+                    var a1 = unlockAllCG();
+                    var a2 = unlockAllSprites();
+                    var a3 = unlockAllBGM();
+                    var a4 = unlockAllBG();
+                    var a5 = unlockAllEndings();
+                    var a6 = unlockAllAchievements();
+                    msg = t('cheat.all_unlocked', a1, a2, a3, a4, a5, a6);
+                    break;
+                case 'egg':
+                case 'easteregg':
+                case 'developer':
+                    if (typeof loadEggScenes === 'function') { loadEggScenes(); closeCheatConsole(); return; }
+                    else { msg = t('cheat.egg_ready'); }
+                    break;
+                case 'credits':
+                case 'credit':
+                    showCredits();
+                    closeCheatConsole();
+                    return;
+                case 'konami':
+                    unlockEpilogue();
+                    unlockAllCG(); unlockAllSprites(); unlockAllBGM(); unlockAllBG();
+                    unlockAllEndings(); unlockAllAchievements();
+                    msg = t('cheat.konami');
+                    break;
+                default:
+                    msg = t('cheat.unknown_cmd', cmd);
+            }
+            showCheatToast(msg);
+            if (typeof renderGalleryPage === 'function') {
+                var galleryPage = document.getElementById('galleryPage');
+                if (galleryPage && galleryPage.style.display !== 'none') {
+                    var activeTab = document.querySelector('.gallery-tab.active');
+                    if (activeTab) {
+                        renderGalleryPage(activeTab.dataset.tab || 'cg');
+                    }
+                }
+            }
+        }
+
+        function openCheatConsole() {
+            overlay.classList.add('active');
+            input.value = '';
+            setTimeout(function() { input.focus(); }, 100);
+        }
+
+        function closeCheatConsole() {
+            overlay.classList.remove('active');
+        }
+
+        function toggleCheatConsole() {
+            if (overlay.classList.contains('active')) {
+                closeCheatConsole();
+            } else {
+                openCheatConsole();
+            }
+        }
+
+        executeBtn.addEventListener('click', function() {
+            executeCheat(input.value);
+            input.value = '';
+            input.focus();
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeCheat(input.value);
+                input.value = '';
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeCheatConsole();
+            }
+        });
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closeCheatConsole();
+        });
+
+        overlay.querySelectorAll('.cheat-hint-chip').forEach(function(chip) {
+            chip.addEventListener('click', function() {
+                var cmd = chip.dataset.cmd;
+                input.value = cmd;
+                executeCheat(cmd);
+                input.value = '';
+                input.focus();
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                if (e.target === input && e.key === '`') {
+                    e.preventDefault();
+                    closeCheatConsole();
+                }
+                return;
+            }
+            if (e.key === '`' || e.code === 'Backquote') {
+                e.preventDefault();
+                toggleCheatConsole();
+            }
+        });
+
+        // ── 制作人员名单 ──
+        var creditsOverlay = document.getElementById('creditsOverlay');
+        var creditsRoll = document.getElementById('creditsRoll');
+        var creditsTimer = null;
+        window.showCredits = function() {
+            if (!creditsOverlay) return;
+            initCredits(); // 每次播放前刷新内容
+            creditsRoll.style.animation = 'none';
+            creditsRoll.offsetHeight;
+            creditsRoll.style.animation = 'creditsRollUp 32s linear forwards';
+            creditsOverlay.classList.add('show');
+            var onEnd = function() {
+                creditsOverlay.classList.remove('show');
+                creditsRoll.removeEventListener('animationend', onEnd);
+                creditsTimer = null;
+            };
+            if (creditsTimer) clearTimeout(creditsTimer);
+            creditsRoll.addEventListener('animationend', onEnd);
+            creditsTimer = setTimeout(function() {
+                creditsOverlay.classList.remove('show');
+                creditsRoll.removeEventListener('animationend', onEnd);
+                creditsTimer = null;
+            }, 32500);
+        };
+        if (creditsOverlay) {
+            creditsOverlay.addEventListener('click', function() {
+                creditsOverlay.classList.remove('show');
+                if (creditsTimer) { clearTimeout(creditsTimer); creditsTimer = null; }
+            });
+        }
+
+        // 🕹️ Konami Code (↑ ↑ ↓ ↓ ← → ← → B A)
+        var konami = [38,38,40,40,37,39,37,39,66,65];
+        var konamiPos = 0;
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+            if (e.keyCode === konami[konamiPos]) {
+                konamiPos++;
+                if (konamiPos === konami.length) {
+                    konamiPos = 0;
+                    executeCheat('konami');
+                    showCredits();
+                }
+            } else if (e.keyCode === konami[0]) {
+                konamiPos = 1;
+            } else {
+                konamiPos = 0;
+            }
+        });
+
+        // 暴露到全局
+        window.executeCheat = executeCheat;
+        window.toggleCheatConsole = toggleCheatConsole;
+        // 允许项目自定义制作人员名单
+        // 设置 window.GinkgoCredits = [{role:'Role', name:'Name', note:'Note'}, ...]
+        // null 表示空行分隔，className 可选: 'credits-title'|'credits-subtitle'|'credits-end'|'credits-end-note'
+    })();
+    </script>
+
+    <!-- PWA: Service Worker 注册 -->
+    <script>
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+        navigator.serviceWorker.register('sw.js').then(function(reg) {
+            console.log('[SW] 注册成功, scope:', reg.scope);
+        }).catch(function(err) {
+            console.warn('[SW] 注册失败:', err.message);
+        });
+    }
+    </script>
+</body>
+</html>

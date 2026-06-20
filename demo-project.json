@@ -1,0 +1,82 @@
+{
+  "scenes": [
+    {
+      "bg": "campus",
+      "speaker": "Narrator",
+      "text": "Welcome to Ginkgo Engine — an open-source visual novel engine for the web.",
+      "sprites": [],
+      "bgm": "theme",
+      "locationHint": "Demo Scene",
+      "next": 1,
+      "triggerChapterTransition": false,
+      "effects": [
+        { "type": "vignette", "duration": 3000 }
+      ]
+    },
+    {
+      "bg": "campus",
+      "speaker": "System",
+      "text": "[b]Features:[/b] BBCode markup, multi-sprite, effects, choices, variables, and more.",
+      "sprites": [{ "key": "char_default", "position": "right", "breathing": true }],
+      "bgm": "theme",
+      "locationHint": "Feature Demo",
+      "next": 2
+    },
+    {
+      "bg": "campus",
+      "speaker": "Hero",
+      "text": "[c=gold]Hello, world![/c] [shake]This text shakes![/shake] [i]Italic too.[/i]",
+      "sprites": [],
+      "bgm": "theme",
+      "next": 3,
+      "effects": [
+        { "type": "shake" },
+        { "type": "mood-warm" }
+      ]
+    },
+    {
+      "bg": "campus",
+      "speaker": " ",
+      "text": "What will you do?",
+      "hasChoices": true,
+      "choices": [
+        { "text": "Continue the demo", "nextIdx": 4 },
+        { "text": "End the demo", "nextIdx": -1 }
+      ]
+    },
+    {
+      "bg": "campus",
+      "speaker": "Narrator",
+      "text": "[big]That's the Ginkgo Engine![/big]\n\nLoad your own project JSON to start creating.",
+      "sprites": [],
+      "bgm": "theme",
+      "next": -1,
+      "triggerChapterTransition": true,
+      "subtitle": "End of Demo"
+    }
+  ],
+  "assets": {
+    "bg": {
+      "campus": "assets/bg/campus.png"
+    },
+    "sprites": {
+      "char_default": "assets/sprites/character_default.png"
+    },
+    "bgm": {
+      "theme": "assets/bgm/theme.mp3"
+    },
+    "cg": {},
+    "se": {},
+    "voice": {},
+    "video": {}
+  },
+  "characters": {
+    "hero": {
+      "name": "Hero",
+      "personality": "Your main character — customize this in the editor.",
+      "background": "",
+      "speechStyle": "",
+      "extraNotes": ""
+    }
+  }
+}

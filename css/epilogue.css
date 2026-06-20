@@ -1,0 +1,308 @@
+/**
+ * epilogue.css — 后日谈 AI 对话样式
+ */
+
+/* ═══════════════ 聊天占位引导语 ═══════════════ */
+.ep-chat-placeholder {
+    flex:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:flex-end;
+    padding-bottom:12vh;
+    color:rgba(255,255,255,0.16);
+    user-select:none; pointer-events:none;
+    gap:10px;
+}
+.ep-chat-placeholder-text { font-size:14px;text-align:center;line-height:1.8;letter-spacing:1px; }
+
+/* ═══════════════ 主容器（轻量浮层，场景光透入） ═══════════════ */
+#epilogueContainer {
+    display:flex;flex-direction:column;
+    /* 底部深色沉稳，向上渐变到透明让场景光透入 */
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(10,10,16,0.18) 35%,
+        rgba(10,10,16,0.45) 65%,
+        rgba(10,10,16,0.82) 85%,
+        rgba(10,10,16,0.95) 100%
+    );
+    border-top: 1px solid rgba(255,255,255,0.03);
+    pointer-events:auto;font-family:'Noto Serif SC',serif;
+    animation:epFadeIn 0.5s ease;
+}
+@keyframes epFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════ 对话记录区 ═══════════════ */
+.ep-chat-log {
+    flex:1;overflow-y:auto;
+    padding:18px 28px 4px;
+    display:flex;flex-direction:column;gap:12px;
+    scroll-behavior:smooth;
+}
+.ep-chat-log::-webkit-scrollbar{width:3px;}
+.ep-chat-log::-webkit-scrollbar-track{background:transparent;}
+.ep-chat-log::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px;}
+
+/* ─── 聊天气泡 ───────────────────────────────── */
+.ep-chat-msg{display:flex;flex-direction:column;max-width:52%;animation:epMsgIn 0.3s ease;}
+@keyframes epMsgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ep-chat-assistant{align-self:flex-start;margin-right:auto;}
+.ep-chat-user{align-self:flex-end;margin-left:auto;}
+.ep-chat-error{align-self:center;opacity:0.5;}
+.ep-chat-label{font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:3px;padding:0 4px;}
+.ep-chat-text{padding:11px 18px;border-radius:18px;font-size:15px;line-height:1.7;color:#e0d8ce;}
+.ep-chat-assistant .ep-chat-text{
+    background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.05);
+    border-bottom-left-radius:6px;border-top-left-radius:6px;
+}
+.ep-chat-user .ep-chat-text{
+    background:rgba(74,144,217,0.10);border:1px solid rgba(74,144,217,0.14);
+    border-bottom-right-radius:6px;border-top-right-radius:6px;
+}
+.ep-chat-error .ep-chat-text{background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.08);font-size:13px;}
+
+/* ═══════════════ 思考中 ═══════════════ */
+.ep-thinking{display:flex;align-items:center;gap:6px;padding:8px 28px;}
+.ep-thinking-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);animation:epDotPulse 1.4s ease-in-out infinite;}
+.ep-thinking-dot:nth-child(2){animation-delay:0.2s;}.ep-thinking-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes epDotPulse{0%,80%,100%{opacity:0.12;transform:scale(0.8)}40%{opacity:0.7;transform:scale(1)}}
+
+/* ═══════════════ 快捷话题弹出 ═══════════════ */
+.ep-topics-wrapper{position:relative;flex-shrink:0;}
+.ep-topics-btn{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);font-size:14px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.ep-topics-btn:hover{background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.16);}
+.ep-topics-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.ep-topics-popover{position:absolute;bottom:48px;left:0;min-width:180px;max-height:280px;overflow-y:auto;background:rgba(18,16,24,0.95);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:6px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 12px 36px rgba(0,0,0,0.45);animation:epPopIn 0.18s ease;}
+@keyframes epPopIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ep-topics-popover::-webkit-scrollbar{width:3px;}
+.ep-topics-popover::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px;}
+.ep-topic-item{display:block;width:100%;padding:9px 14px;border:none;border-radius:10px;background:transparent;color:rgba(255,255,255,0.55);font-size:13px;text-align:left;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.ep-topic-item:hover{background:rgba(255,255,255,0.07);color:#fff;}
+
+/* ═══════════════ 输入区域（居中窄栏） ═══════════════ */
+.ep-input-area{display:flex;align-items:center;gap:10px;padding:8px 0 28px;width:66%;max-width:780px;margin:0 auto;flex-shrink:0;}
+.ep-message-input{flex:1;padding:10px 18px;border-radius:22px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#e0d8ce;font-size:14px;font-family:inherit;outline:none;transition:all 0.25s;}
+.ep-message-input:focus{border-color:rgba(212,175,55,0.25);background:rgba(255,255,255,0.05);box-shadow:0 0 0 2px rgba(212,175,55,0.06);}
+.ep-message-input::placeholder{color:rgba(255,255,255,0.16);}
+.ep-message-input:disabled{opacity:0.35;cursor:not-allowed;}
+.ep-send-btn{width:38px;height:38px;border-radius:50%;border:none;background:rgba(212,175,55,0.5);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;}
+.ep-send-btn:hover{background:rgba(212,175,55,0.7);transform:scale(1.05);}
+.ep-send-btn:disabled{background:rgba(255,255,255,0.05);cursor:not-allowed;transform:none;}
+
+/* ═══════════════ 工具栏 ═══════════════ */
+.ep-toolbar{display:flex;justify-content:center;gap:4px;padding:2px 20px 10px;flex-shrink:0;opacity:0.35;transition:opacity 0.3s;flex-wrap:wrap;}
+.ep-toolbar:hover{opacity:0.65;}
+.ep-tool-btn{padding:5px 12px;border-radius:6px;border:none;background:transparent;color:rgba(255,255,255,0.45);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.ep-tool-btn:hover{color:#fff;background:rgba(255,255,255,0.05);}
+
+/* ═══════════════ Token 用量条 ═══════════════ */
+.ep-usage-bar{
+    display:flex;justify-content:center;gap:14px;padding:0 20px 6px;flex-shrink:0;
+    font-size:11px;color:rgba(255,255,255,0.22);font-family:'Courier New',monospace;
+    user-select:none;
+}
+.ep-usage-bar span{display:inline-flex;align-items:center;gap:3px;}
+
+/* ═══════════════ 设置面板 ═══════════════ */
+.ep-settings-panel{
+    position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+    width:min(88vw,440px);margin-bottom:8px;
+    background:rgba(18,16,24,0.96);border:1px solid rgba(255,255,255,0.1);
+    border-radius:16px;overflow:hidden;
+    box-shadow:0 -4px 24px rgba(0,0,0,0.3);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    animation:epSettingsIn 0.25s ease;
+    z-index:55;
+}
+@keyframes epSettingsIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.ep-settings-panel-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);
+    font-size:15px;font-weight:600;color:rgba(255,255,255,0.7);
+}
+.ep-settings-close-btn{
+    width:30px;height:30px;border-radius:50%;border:none;
+    background:transparent;color:rgba(255,255,255,0.4);font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+}
+.ep-settings-close-btn:hover{background:rgba(255,255,255,0.1);color:#fff;}
+.ep-settings-panel-body{padding:6px 0;}
+.ep-setting-row{
+    padding:12px 20px;display:flex;flex-direction:column;gap:6px;
+}
+.ep-setting-row label{font-size:13px;color:rgba(255,255,255,0.55);}
+.ep-setting-slider-wrap{display:flex;align-items:center;gap:12px;}
+.ep-setting-slider-wrap input[type=range]{
+    flex:1;height:5px;border-radius:3px;
+    -webkit-appearance:none;appearance:none;
+    background:rgba(255,255,255,0.12);outline:none;cursor:pointer;
+}
+.ep-setting-slider-wrap input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:#d4af37;cursor:pointer;border:2px solid rgba(255,255,255,0.2);
+}
+.ep-setting-slider-wrap input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:#d4af37;cursor:pointer;border:2px solid rgba(255,255,255,0.2);
+}
+.ep-setting-slider-wrap span{min-width:42px;text-align:right;font-size:13px;color:rgba(255,255,255,0.5);}
+.ep-setting-hint{font-size:11px;color:rgba(255,255,255,0.2);display:flex;justify-content:space-between;}
+.ep-setting-divider{height:1px;margin:8px 20px;background:rgba(255,255,255,0.06);}
+.ep-setting-api-btn{
+    width:calc(100% - 40px);margin:4px 20px;padding:10px;border-radius:10px;
+    border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);
+    color:rgba(255,255,255,0.5);font-size:13px;font-family:inherit;cursor:pointer;
+    transition:all 0.2s;
+}
+.ep-setting-api-btn:hover{background:rgba(255,255,255,0.08);color:#fff;}
+
+/* ═══════════════ BBCode ═══════════════ */
+.ep-bb-b{font-weight:900;font-size:1.05em;}
+.ep-bb-i{font-style:italic;color:#d0c8b8;}
+.ep-bb-shake{display:inline-block;animation:epInlineShake 0.35s ease-in-out;}
+.ep-bb-big{font-size:1.18em;}
+.ep-bb-small{font-size:0.82em;color:#b0a090;}
+.ep-inner{font-size:0.85em;color:#908878;font-style:italic;padding:0 2px;}
+@keyframes epInlineShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
+.ep-bb-effect{text-shadow:0 0 6px rgba(212,175,55,0.2);}
+.ep-bb-eff-flash{animation:epEffectFlash 0.4s ease-out;}.ep-bb-eff-sepia{color:#c9a86c;}.ep-bb-eff-vignette{color:#e0d8cc;}
+.ep-bb-eff-warm{color:#f0a040;}.ep-bb-eff-cool{color:#80b0e0;}.ep-bb-eff-dark{color:#908878;}
+.ep-bb-eff-blur{color:#b0a8a0;}.ep-bb-eff-bright{color:#fff8e0;}
+@keyframes epEffectFlash{0%{opacity:0.3;text-shadow:0 0 12px #fff}50%{opacity:1;text-shadow:0 0 20px #fff}100%{opacity:1;text-shadow:0 0 0 transparent}}
+
+/* ═══════════════ API Key 弹窗 ═══════════════ */
+.ep-modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);}
+.ep-modal-content{background:#1a1820;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:28px 24px;max-width:420px;width:90%;color:#e8e0d8;}
+.ep-modal-content h3{margin:0 0 16px;font-size:18px;font-weight:600;}
+.ep-btn-primary{width:100%;padding:12px;border-radius:10px;border:none;background:#4a90d9;color:#fff;font-size:15px;font-family:inherit;cursor:pointer;font-weight:600;transition:background 0.2s;}
+.ep-btn-primary:hover{background:#3a7bc8;}
+
+/* ═══════════════ 自定义场景面板 ═══════════════ */
+.ep-custom-panel{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;}
+.ep-custom-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);}
+.ep-custom-sheet{position:relative;width:90vw;max-width:720px;max-height:80vh;background:#1a1820;border:1px solid rgba(255,255,255,0.1);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.5);animation:epSheetIn 0.35s cubic-bezier(0.16,1,0.3,1);}
+@keyframes epSheetIn{from{opacity:0;transform:translateY(30px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.ep-custom-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;}
+.ep-custom-header h2{margin:0;font-size:18px;font-weight:700;color:#f0e0b0;letter-spacing:2px;}
+.ep-custom-close{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.ep-custom-close:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.3);}
+.ep-custom-tabs{display:flex;gap:8px;padding:14px 24px 0;flex-shrink:0;}
+.ep-custom-tab{padding:8px 24px;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(255,255,255,0.5);font-size:14px;cursor:pointer;font-family:inherit;transition:all 0.25s;}
+.ep-custom-tab.active{background:#d4af37;color:#1a1820;border-color:#d4af37;font-weight:600;}
+.ep-custom-tab:hover:not(.active){border-color:rgba(255,255,255,0.3);color:#fff;}
+.ep-custom-current{display:flex;align-items:center;gap:12px;padding:10px 24px;font-size:13px;color:rgba(255,255,255,0.5);flex-shrink:0;}
+.ep-custom-current strong{color:#d4af37;}
+.ep-custom-current-preview{width:48px;height:28px;border-radius:6px;background-size:cover;background-position:center;border:1px solid rgba(255,255,255,0.2);}
+.ep-custom-body{flex:1;overflow-y:auto;padding:16px 24px 24px;}
+.ep-custom-body::-webkit-scrollbar{width:4px;}
+.ep-custom-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+.ep-custom-bg-card{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background-size:cover;background-position:center;cursor:pointer;transition:all 0.3s;border:2px solid transparent;margin-bottom:12px;}
+.ep-custom-bg-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.4);border-color:rgba(255,255,255,0.3);}
+.ep-custom-bg-card.active{border-color:#d4af37;box-shadow:0 0 0 3px rgba(212,175,55,0.25);}
+.ep-custom-bg-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 60%);display:flex;align-items:flex-end;justify-content:space-between;padding:12px 16px;}
+.ep-custom-bg-card-name{color:#fff;font-size:15px;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.6);}
+.ep-custom-bg-card-check{color:#d4af37;font-size:13px;font-weight:600;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:20px;}
+.ep-custom-bgm-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.2s;margin-bottom:6px;}
+.ep-custom-bgm-row:hover{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.15);}
+.ep-custom-bgm-row.active{border-color:rgba(212,175,55,0.4);background:rgba(212,175,55,0.06);}
+.ep-custom-bgm-icon{font-size:20px;flex-shrink:0;}
+.ep-custom-bgm-name{font-size:15px;color:#e8e0d8;font-weight:500;min-width:80px;}
+.ep-custom-bgm-file{font-size:12px;color:rgba(255,255,255,0.3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ep-custom-bgm-actions{display:flex;gap:6px;flex-shrink:0;}
+.ep-custom-bgm-btn{padding:6px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap;}
+.ep-custom-bgm-btn:hover{background:rgba(255,255,255,0.1);color:#fff;}
+.ep-custom-bgm-btn.preview{border-color:rgba(74,144,217,0.4);color:#4a90d9;}
+.ep-custom-bgm-btn.preview:hover{background:rgba(74,144,217,0.15);}
+.ep-custom-bgm-btn.select{border-color:rgba(212,175,55,0.5);color:#d4af37;}
+.ep-custom-bgm-btn.select:hover{background:rgba(212,175,55,0.15);}
+.ep-custom-bgm-row.active .ep-custom-bgm-btn.select{background:rgba(212,175,55,0.2);color:#d4af37;border-color:#d4af37;}
+.ep-custom-bgm-header{margin-bottom:16px;padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);}
+.ep-custom-bgm-vol{display:flex;align-items:center;gap:12px;font-size:14px;color:rgba(255,255,255,0.6);}
+.ep-custom-bgm-vol label{flex-shrink:0;}
+.ep-custom-bgm-vol span{min-width:40px;text-align:right;}
+.ep-custom-vol-slider{flex:1;height:6px;border-radius:3px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.12);outline:none;cursor:pointer;}
+.ep-custom-vol-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#d4af37;cursor:pointer;border:2px solid rgba(255,255,255,0.3);box-shadow:0 0 8px rgba(212,175,55,0.3);}
+.ep-custom-vol-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#d4af37;cursor:pointer;border:2px solid rgba(255,255,255,0.3);}
+
+/* ═══════ 立绘选择卡片 ═══════ */
+.ep-custom-sprite-card {
+    position:relative;display:inline-block;
+    width:calc(25% - 10px);margin:5px;min-width:100px;
+    border-radius:12px;overflow:hidden;
+    border:2px solid rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.03);cursor:pointer;
+    transition:all 0.25s;text-align:center;padding:8px;
+    aspect-ratio:3/4;
+}
+.ep-custom-sprite-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.06);}
+.ep-custom-sprite-card.active{border-color:#d4af37;box-shadow:0 0 0 2px rgba(212,175,55,0.25);}
+.ep-custom-sprite-name{font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ep-custom-sprite-check{position:absolute;top:6px;right:6px;font-size:11px;color:#d4af37;font-weight:600;background:rgba(0,0,0,0.6);padding:2px 8px;border-radius:10px;}
+
+/* ═══════ 视线追踪面板 ═══════ */
+.ep-gaze-section{display:flex;flex-direction:column;gap:16px;}
+.ep-gaze-mode-list{display:flex;flex-direction:column;gap:8px;}
+.ep-gaze-mode-card{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 18px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.02);cursor:pointer;transition:all 0.25s;
+}
+.ep-gaze-mode-card:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);}
+.ep-gaze-mode-card.active{border-color:rgba(212,175,55,0.45);background:rgba(212,175,55,0.08);}
+.ep-gaze-mode-card input[type=radio]{display:none;}
+.ep-gaze-mode-icon{font-size:24px;flex-shrink:0;width:36px;text-align:center;}
+.ep-gaze-mode-label{font-size:15px;color:#e8e0d8;font-weight:500;min-width:80px;}
+.ep-gaze-mode-desc{font-size:12px;color:rgba(255,255,255,0.35);flex:1;}
+.ep-gaze-camera-section{display:flex;flex-direction:column;gap:10px;}
+.ep-gaze-status-bar{
+    padding:10px 16px;border-radius:10px;font-size:13px;
+    border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);
+}
+.ep-gaze-status-bar.gaze-status-ok{color:#4caf50;border-color:rgba(76,175,80,0.3);background:rgba(76,175,80,0.08);}
+.ep-gaze-status-bar.gaze-status-loading{color:#ff9800;border-color:rgba(255,152,0,0.3);background:rgba(255,152,0,0.08);}
+.ep-gaze-status-bar.gaze-status-error{color:#f44336;border-color:rgba(244,67,54,0.3);background:rgba(244,67,54,0.08);}
+.ep-gaze-status-bar.gaze-status-ready{color:#2196f3;border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.08);}
+.ep-gaze-hint{
+    font-size:12px;color:rgba(255,255,255,0.25);line-height:1.7;margin:0;
+    padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.04);
+}
+.ep-gaze-preview-btn{
+    background:rgba(76,175,80,0.12) !important;
+    border-color:rgba(76,175,80,0.3) !important;
+    color:#4caf50 !important;
+    font-weight:600 !important;
+    cursor:pointer !important;
+    pointer-events:auto !important;
+}
+.ep-gaze-preview-btn:hover{
+    background:rgba(76,175,80,0.22) !important;
+    color:#66d9a0 !important;
+}
+
+/* ═══════════════ 后日谈响应式 ═══════════════ */
+@media (max-width: 768px) {
+    #epilogueContainer { border-radius: 0 !important; }
+    .ep-chat-log { padding: 14px 16px 4px; gap: 8px; }
+    .ep-chat-msg { max-width: 78% !important; }
+    .ep-chat-text { font-size: 14px !important; padding: 10px 14px !important; }
+    .ep-input-area { width: 88% !important; max-width: none !important; padding: 6px 0 20px !important; }
+    .ep-message-input { font-size: 14px !important; padding: 12px 16px !important; }
+    .ep-toolbar { gap: 2px !important; padding: 2px 10px 8px !important; }
+    .ep-tool-btn { padding: 4px 8px !important; font-size: 11px !important; }
+    .ep-topics-popover { left: -40px !important; min-width: 150px !important; max-height: 220px !important; }
+    #epTopBar { padding: 8px 12px !important; }
+    #epTopTitle { font-size: 10px !important; }
+    #epSplashTitle { font-size: 28px !important; }
+    #epSplashSub { font-size: 14px !important; }
+    .ep-modal-content { padding: 20px 16px !important; width: 94% !important; }
+    .ep-custom-sheet { width: 96vw !important; max-height: 85vh !important; }
+    .ep-custom-bgm-grid > button { width: calc(50% - 8px) !important; }
+}
+
+@media (max-width: 480px) {
+    .ep-chat-msg { max-width: 88% !important; }
+    .ep-chat-text { font-size: 13px !important; padding: 8px 12px !important; }
+    .ep-input-area { width: 94% !important; }
+    .ep-message-input { font-size: 13px !important; padding: 10px 14px !important; }
+    .ep-tool-btn { padding: 3px 6px !important; font-size: 10px !important; }
+    #epSplashTitle { font-size: 22px !important; letter-spacing: 4px !important; }
+    .ep-custom-bgm-grid > button { width: 100% !important; margin: 4px 0 !important; }
+}

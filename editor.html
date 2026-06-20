@@ -1,0 +1,2956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title data-i18n="editor.page_title">Ginkgo Engine · Visual Novel Editor</title>
+    <style>
+        .effects-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+        .effects-category { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; border: 1px solid rgba(219,165,65,0.3); border-radius: 8px; padding: 6px 10px; }
+        .effects-cat-label { font-size: 0.7rem; color: #dba541; margin-right: 4px; white-space: nowrap; }
+        .eff-chip { display: inline-flex; align-items: center; gap: 2px; font-size: 0.75rem; color: #c0b090; cursor: pointer; padding: 2px 6px; border-radius: 12px; background: rgba(255,255,255,0.04); transition: 0.15s; user-select: none; }
+        .eff-chip:hover { background: rgba(219,165,65,0.15); color: #f5da8c; }
+        .eff-chip input[type="checkbox"] { width: 12px; height: 12px; accent-color: #dba541; cursor: pointer; margin: 0; }
+        .eff-chip:has(input:checked) { background: rgba(219,165,65,0.2); color: #f5da8c; }
+        .effects-duration-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+        .effects-duration-row input { background: #1e1c24; border: 1px solid rgba(219,165,65,0.4); border-radius: 6px; color: #f0e8da; padding: 4px 8px; font-size: 0.8rem; }
+        .effects-duration-row input:focus { outline: none; border-color: #dba541; }
+        .preview-box.shake-active { animation: previewShake 0.5s ease-out; }
+        @keyframes previewShake {
+            0%,100%{transform:translate(0,0)} 10%{transform:translate(-6px,3px)} 20%{transform:translate(5px,-4px)}
+            30%{transform:translate(-4px,2px)} 40%{transform:translate(3px,-2px)} 50%{transform:translate(-2px,1px)}
+            60%{transform:translate(2px,-1px)} 70%{transform:translate(-1px,0)}
+        }
+        .preview-box.zoom-in-active { animation: previewZoomIn 1.2s ease-out forwards; }
+        @keyframes previewZoomIn { from { transform: scale(1); } to { transform: scale(1.06); } }
+        .bbcode-btn {
+            font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(219,165,65,0.35);
+            background: rgba(30,28,36,0.8); color: #c0b090; cursor: pointer; transition: 0.15s;
+            user-select: none; white-space: nowrap;
+        }
+        .bbcode-btn:hover { background: rgba(219,165,65,0.2); color: #f5da8c; border-color: #dba541; }
+        .sprite-slot-editor {
+            display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+            background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 4px;
+        }
+        .sprite-slot-editor select, .sprite-slot-editor input {
+            font-size: 0.75rem; background: #1e1c24; border: 1px solid rgba(219,165,65,0.4);
+            border-radius: 4px; color: #f0e8da; padding: 2px 6px;
+        }
+        .sprite-slot-editor select:focus, .sprite-slot-editor input:focus { outline: none; border-color: #dba541; }
+        .sprite-slot-editor label { font-size: 0.65rem; color: #a09888; white-space: nowrap; }
+        .sprite-slot-editor .remove-slot-btn {
+            background: none; border: 1px solid rgba(255,100,100,0.5); color: #f88; cursor: pointer;
+            border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; line-height: 1; padding: 0;
+        }
+        .context-menu {
+            position: fixed; z-index: 10000; min-width: 240px;
+            background: #1e1c26; border: 1px solid rgba(219,165,65,0.5);
+            border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            padding: 6px 0; font-size: 0.82rem;
+        }
+        .context-menu-item {
+            padding: 9px 18px; cursor: pointer; color: #d0c8b8; transition: 0.12s;
+            display: flex; align-items: center; gap: 8px; user-select: none;
+        }
+        .context-menu-item:hover { background: rgba(219,165,65,0.2); color: #f5da8c; }
+        .context-menu-item:active { background: rgba(219,165,65,0.35); }
+        .context-menu-separator { height: 1px; background: rgba(219,165,65,0.2); margin: 4px 12px; }
+        .context-menu-danger { color: #ff8888; }
+        .context-menu-danger:hover { background: rgba(255,100,100,0.2); color: #ffaaaa; }
+        /* ========== ImgBB 图床上传面板 ========== */
+        .imgbb-section { margin-top: 12px; border-top: 1px solid rgba(219,165,65,0.3); padding-top: 12px; }
+        .imgbb-section h4 { color: #dba541; font-size: 0.85rem; margin-bottom: 6px; }
+        .imgbb-api-input {
+            width: 100%; background: #1e1c24; border: 1px solid rgba(219,165,65,0.4);
+            border-radius: 6px; padding: 6px 10px; color: #f0e8da; font-size: 0.72rem;
+            font-family: 'Courier New', monospace; outline: none; margin-bottom: 6px;
+        }
+        .imgbb-api-input:focus { border-color: #dba541; }
+        .imgbb-api-input::placeholder { color: #555; }
+        .imgbb-upload-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+        .imgbb-btn {
+            font-size: 0.7rem; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(219,165,65,0.4);
+            background: rgba(219,165,65,0.1); color: #dba541; cursor: pointer; transition: 0.15s;
+        }
+        .imgbb-btn:hover { background: rgba(219,165,65,0.25); color: #f5da8c; }
+        .imgbb-btn.primary { background: #dba541; color: #1a1a2e; border-color: #dba541; font-weight: 700; }
+        .imgbb-btn.primary:hover { background: #f0d060; }
+        .imgbb-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .imgbb-progress-outer { background: #0d1117; border-radius: 6px; height: 6px; margin: 6px 0; overflow: hidden; }
+        .imgbb-progress-inner { height: 100%; background: linear-gradient(90deg, #dba541, #f0d060); border-radius: 6px; transition: width 0.3s; width: 0%; }
+        .imgbb-stats { font-size: 0.65rem; color: #887860; margin-bottom: 4px; }
+        .imgbb-file-list { max-height: 120px; overflow-y: auto; font-size: 0.65rem; font-family: 'Courier New', monospace; color: #888; margin-top: 4px; }
+        .imgbb-file-item { display: flex; justify-content: space-between; padding: 2px 6px; }
+        .imgbb-file-item:nth-child(odd) { background: rgba(255,255,255,0.02); }
+        .imgbb-file-item .done { color: #6adb41; }
+        .imgbb-file-item .fail { color: #ff6b6b; }
+        .imgbb-tip { font-size: 0.6rem; color: #665; margin-top: 4px; }
+        .imgbb-tip a { color: #dba541; }
+        /* ========== 预览面板（匹配 gal.html 游戏渲染） ========== */
+        .preview-game-wrapper {
+            width: 100%; border-radius: 16px; overflow: hidden;
+            background: #0f0e12; box-shadow: 0 0 0 1px rgba(210,170,80,0.4);
+        }
+        .preview-visual-area {
+            position: relative; width: 100%; aspect-ratio: 16 / 9;
+            background-color: #1e1c22; overflow: hidden;
+        }
+        .preview-bg-layer, .preview-bg-layer-2 {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            z-index: 1; transition: opacity 0.7s ease, filter 0.8s ease;
+        }
+        .preview-bg-layer-2 { z-index: 2; opacity: 0; }
+        .preview-location-hint {
+            position: absolute; top: 12px; left: 12px; z-index: 10;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            border: 1px solid rgba(210,170,80,0.5); border-radius: 10px;
+            padding: 4px 10px; font-size: 0.7rem; color: #f0e8da;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .preview-location-hint.show { opacity: 1; }
+        .preview-sprite-wrapper {
+            position: absolute; bottom: 0; right: 5%; height: 94%;
+            pointer-events: none; z-index: 5; display: flex; align-items: flex-end;
+        }
+        .preview-sprite-wrapper img {
+            height: 100%; width: auto; object-fit: contain;
+            filter: drop-shadow(0 8px 14px rgba(0,0,0,0.4));
+            vertical-align: bottom; animation: spriteBreathePrev 4s ease-in-out infinite;
+        }
+        @keyframes spriteBreathePrev {
+            0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)}
+        }
+        .preview-multi-sprite-container {
+            position: absolute; bottom: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5; display: flex; align-items: flex-end;
+        }
+        .preview-sprite-slot {
+            position: absolute; bottom: 0; height: 94%;
+            pointer-events: none; display: flex; align-items: flex-end;
+        }
+        .preview-sprite-slot.pos-left { left: 0; }
+        .preview-sprite-slot.pos-center { left: 50%; transform: translateX(-50%); }
+        .preview-sprite-slot.pos-right { right: 3%; }
+        .preview-sprite-slot img {
+            height: 100%; width: auto; object-fit: contain;
+            filter: drop-shadow(0 8px 14px rgba(0,0,0,0.4));
+            vertical-align: bottom; animation: spriteBreathePrev 4s ease-in-out infinite;
+        }
+        .preview-vignette-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 7; transition: opacity 0.8s ease; opacity: 0;
+            background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.7) 100%);
+        }
+        .preview-vignette-overlay.active { opacity: 1; }
+        .preview-flash-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 55; background: #fff;
+            opacity: 0; transition: opacity 0.08s;
+        }
+        .preview-flash-overlay.active { opacity: 0.75; }
+        .preview-letterbox-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 6; transition: opacity 0.6s ease; opacity: 0;
+        }
+        .preview-letterbox-overlay::before, .preview-letterbox-overlay::after {
+            content: ''; position: absolute; left: 0; width: 100%; height: 0;
+            background: #000; transition: height 0.6s ease;
+        }
+        .preview-letterbox-overlay::before { top: 0; }
+        .preview-letterbox-overlay::after { bottom: 0; }
+        .preview-letterbox-overlay.active { opacity: 1; }
+        .preview-letterbox-overlay.active::before, .preview-letterbox-overlay.active::after { height: 7%; }
+        .preview-affinity-display {
+            position: absolute; bottom: 10px; left: 12px; z-index: 45;
+            display: flex; align-items: center; gap: 6px; opacity: 0;
+            transition: opacity 0.3s; pointer-events: none;
+            background: rgba(0,0,0,0.5); border-radius: 12px; padding: 3px 8px;
+        }
+        .preview-affinity-display.show { opacity: 1; }
+        .preview-affinity-display .preview-affinity-label {
+            color: #f5da8c; font-size: 0.6rem; font-weight: 600; min-width: 40px; text-align: right;
+        }
+        .preview-affinity-display .preview-affinity-fill-outer {
+            width: 60px; height: 4px; background: rgba(255,255,255,0.12);
+            border-radius: 2px; overflow: hidden;
+        }
+        .preview-affinity-display .preview-affinity-fill-inner {
+            height: 100%; background: linear-gradient(90deg,#dba541,#f0bc60);
+            border-radius: 2px; transition: width 0.6s ease; width: 0%;
+        }
+        .preview-choices-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+            display: none; flex-direction: column; justify-content: center;
+            align-items: center; gap: 10px; z-index: 100; pointer-events: auto;
+        }
+        .preview-choice-btn {
+            background: rgba(30,25,20,0.95); border: 2px solid #dba541;
+            border-radius: 40px; padding: 8px 20px; font-size: 0.75rem;
+            font-weight: 600; color: #f7e5c2; text-align: center;
+            width: 85%; max-width: 300px; cursor: default;
+            transition: all 0.2s; font-family: inherit;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .preview-dialog-area {
+            position: relative; background: rgba(20,18,24,0.94);
+            backdrop-filter: blur(14px); border-top: 1px solid rgba(210,170,80,0.6);
+            padding: 10px 14px 12px; z-index: 30;
+        }
+        .preview-speaker-name {
+            font-size: 0.85rem; font-weight: 700; color: #f5da8c;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4); letter-spacing: 1px;
+            border-left: 4px solid #dba541; padding-left: 12px;
+            margin-bottom: 6px; min-height: 1.6rem; line-height: 1.4;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .preview-speaker-name.empty {
+            border-left-color: transparent; color: transparent; text-shadow: none;
+        }
+        .preview-subtitle-tag {
+            font-size: 0.6rem; color: #f5da8c; background: rgba(219,165,65,0.2);
+            padding: 1px 6px; border-radius: 6px; display: none;
+        }
+        .preview-subtitle-tag.show { display: inline-block; }
+        .preview-dialog-text {
+            background: rgba(0,0,0,0.45); border-radius: 16px;
+            padding: 10px 14px; min-height: 50px; font-size: 0.78rem;
+            line-height: 1.5; color: #f0e8da; letter-spacing: 0.3px;
+            word-break: break-word;
+        }
+        /* 预览画面效果 */
+        .preview-visual-area.shake-active > .preview-bg-layer,
+        .preview-visual-area.shake-active > .preview-bg-layer-2,
+        .preview-visual-area.shake-active > .preview-sprite-wrapper,
+        .preview-visual-area.shake-active > .preview-multi-sprite-container {
+            animation: prevScreenShake 0.5s ease-out;
+        }
+        @keyframes prevScreenShake {
+            0%,100%{transform:translate(0,0)} 10%{transform:translate(-6px,3px)} 20%{transform:translate(5px,-4px)}
+            30%{transform:translate(-4px,2px)} 40%{transform:translate(3px,-2px)}
+            50%{transform:translate(-2px,1px)} 60%{transform:translate(2px,-1px)} 70%{transform:translate(-1px,0)}
+        }
+        .preview-visual-area.zoom-in-active > .preview-bg-layer,
+        .preview-visual-area.zoom-in-active > .preview-bg-layer-2,
+        .preview-visual-area.zoom-in-active > .preview-sprite-wrapper,
+        .preview-visual-area.zoom-in-active > .preview-multi-sprite-container {
+            animation: prevZoomIn 1.2s ease-out forwards;
+        }
+        @keyframes prevZoomIn { from { transform: scale(1); } to { transform: scale(1.06); } }
+        .preview-visual-area.mood-warm > .preview-bg-layer,
+        .preview-visual-area.mood-warm > .preview-bg-layer-2,
+        .preview-visual-area.mood-warm > .preview-sprite-wrapper,
+        .preview-visual-area.mood-warm > .preview-multi-sprite-container {
+            filter: sepia(0.25) brightness(1.08);
+        }
+        .preview-visual-area.mood-cool > .preview-bg-layer,
+        .preview-visual-area.mood-cool > .preview-bg-layer-2,
+        .preview-visual-area.mood-cool > .preview-sprite-wrapper,
+        .preview-visual-area.mood-cool > .preview-multi-sprite-container {
+            filter: saturate(0.7) brightness(0.9);
+        }
+        .preview-visual-area.mood-dramatic > .preview-bg-layer,
+        .preview-visual-area.mood-dramatic > .preview-bg-layer-2,
+        .preview-visual-area.mood-dramatic > .preview-sprite-wrapper,
+        .preview-visual-area.mood-dramatic > .preview-multi-sprite-container {
+            filter: contrast(1.15) brightness(0.85);
+        }
+        .preview-bg-layer, .preview-bg-layer-2, .preview-sprite-wrapper, .preview-multi-sprite-container {
+            transition: filter 0.8s ease;
+        }
+        /* 视频叠加层（预览区） */
+        .preview-video-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50; background: #000;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+        .preview-video-overlay.show { opacity: 1; pointer-events: auto; }
+        .preview-video-overlay video {
+            width: 100%; height: 100%; object-fit: contain;
+        }
+        .preview-video-hint {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); color: #f0e8da; font-size: 0.75rem;
+            padding: 4px 14px; border-radius: 12px; pointer-events: none;
+        }
+        /* 视频预览模态框 */
+        .video-preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10001; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; }
+        .video-preview-modal.show { display: flex; }
+        .video-preview-modal video { max-width: 90vw; max-height: 80vh; }
+        .video-preview-modal .close-video-preview {
+            position: absolute; top: 20px; right: 30px; font-size: 2rem; color: #f0e8da;
+            cursor: pointer; z-index: 10002;
+        }
+        .video-preview-modal .video-preview-caption {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            color: #c0b090; font-size: 0.85rem;
+        }
+        /* ===== 新属性编辑器：变量赋值 / 条件跳转 ===== */
+        .kv-editor { border: 1px solid rgba(219,165,65,0.3); border-radius: 8px; padding: 6px 8px; margin-top: 4px; }
+        .kv-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .kv-row input { font-size: 0.75rem; background: #1e1c24; border: 1px solid rgba(219,165,65,0.4); border-radius: 4px; color: #f0e8da; padding: 3px 6px; }
+        .kv-row input:focus { outline: none; border-color: #dba541; }
+        .kv-row .kv-key { width: 100px; }
+        .kv-row .kv-val { width: 80px; }
+        .kv-row .kv-next { width: 60px; }
+        .kv-row .kv-remove { background: none; border: 1px solid rgba(255,100,100,0.5); color: #f88; cursor: pointer; border-radius: 50%; width: 18px; height: 18px; font-size: 0.65rem; line-height: 1; padding: 0; }
+        .kv-add-btn { font-size: 0.7rem; padding: 2px 10px; border-radius: 10px; border: 1px solid rgba(219,165,65,0.35); background: rgba(30,28,36,0.8); color: #c0b090; cursor: pointer; margin-top: 4px; }
+        .kv-add-btn:hover { background: rgba(219,165,65,0.2); color: #f5da8c; border-color: #dba541; }
+    </style>
+    <link rel="stylesheet" href="css/main.css">
+<script src="js/i18n.js"></script>
+</head>
+<body>
+<div class="app-shell">
+    <header class="app-header">
+        <div>
+            <h1 data-i18n="editor.header">Ginkgo Engine · Visual Novel Editor</h1>
+            <p data-i18n="editor.description">友好可爱的视觉小说创作空间，支持场景、CG、BGM、音效与分支编辑。</p>
+        </div>
+        <div class="header-badge" data-i18n="editor.badge">Playful Editor</div>
+        <button onclick="var nl=getLang()==='zh'?'en':'zh';setLang(nl);" style="margin-left:12px;padding:6px 16px;background:rgba(219,165,65,0.15);border:1px solid rgba(219,165,65,0.3);border-radius:20px;color:#dba541;cursor:pointer;font-family:inherit;font-size:0.8rem;"><i class="fa-solid fa-language"></i> <span data-i18n="nav.lang_switch">🌐 中 / EN</span></button>
+    </header>
+    <div class="editor-container">
+    <!-- 左侧资源库 -->
+    <div class="resource-panel">
+        <h3 data-i18n="editor.resource_panel">📦 资源库 (Assets)</h3>
+        <div class="resource-group">
+            <h4 data-i18n="editor.sprite_section">🎨 立绘 (sprites)</h4>
+            <div id="spriteList" class="resource-list"></div>
+            <button class="upload-btn" id="uploadSpriteBtn" data-i18n="editor.upload_sprite">+ 上传立绘</button>
+        </div>
+        <div class="resource-group">
+            <h4 data-i18n="editor.bg_section">🌄 背景 (bg)</h4>
+            <div id="bgList" class="resource-list"></div>
+            <button class="upload-btn" id="uploadBgBtn" data-i18n="editor.upload_bg">+ 上传背景</button>
+        </div>
+        <div class="resource-group">
+            <h4 data-i18n="editor.bgm_section">🎵 音乐 (bgm)</h4>
+            <div id="bgmList" class="resource-list"></div>
+            <button class="upload-btn" id="uploadBgmBtn" data-i18n="editor.upload_bgm">+ 上传音乐</button>
+        </div>
+        <div class="resource-group">
+            <h4 data-i18n="editor.se_section">🔊 音效 (se)</h4>
+            <div id="seList" class="resource-list"></div>
+            <button class="upload-btn" id="uploadSeBtn" data-i18n="editor.upload_se">+ 上传音效</button>
+        </div>
+        <div class="resource-group">
+            <h4 data-i18n="editor.cg_section">🖼️ CG (cg)</h4>
+            <div id="cgList" class="resource-list"></div>
+            <button class="upload-btn" id="uploadCgBtn" data-i18n="editor.upload_cg">+ 上传CG</button>
+        </div>
+        <div class="resource-group">
+            <h4 data-i18n="editor.voice_section">🎙️ 语音 (voice)</h4>
+            <div id="voiceList" class="resource-list"></div>
+            <button class="upload-btn" id="uploadVoiceBtn" data-i18n="editor.upload_voice">+ 上传语音</button>
+        </div>
+        <div class="resource-group">
+            <h4 data-i18n="editor.video_section">🎬 视频 (video)</h4>
+            <div id="videoList" class="resource-list"></div>
+            <button class="upload-btn" id="uploadVideoBtn" data-i18n="editor.upload_video">+ 上传视频</button>
+        </div>
+        <!-- ☁️ ImgBB 图床上传 -->
+        <div class="resource-group imgbb-section">
+            <h4 data-i18n="editor.imgb_section">☁️ ImgBB 图床上传</h4>
+            <input class="imgbb-api-input" id="imgbbApiKey" type="text"
+                   data-i18n-placeholder="editor.imgb_key_placeholder" placeholder="填入 ImgBB API Key (api.imgbb.com)">
+            <div class="imgbb-upload-row">
+                <button class="imgbb-btn" id="imgbbSelectBtn" data-i18n="editor.imgb_select">📁 选择图片文件夹</button>
+                <button class="imgbb-btn primary" id="imgbbUploadBtn" disabled data-i18n="editor.imgb_upload">🚀 批量上传</button>
+                <button class="imgbb-btn" id="imgbbClearBtn" disabled data-i18n="editor.imgb_clear">🗑 清空</button>
+                <button class="imgbb-btn" id="imgbbApplyBtn" disabled data-i18n="editor.imgb_apply">📎 应用到资源</button>
+            </div>
+            <div class="imgbb-progress-outer"><div class="imgbb-progress-inner" id="imgbbProgress"></div></div>
+            <div class="imgbb-stats" id="imgbbStats">未上传</div>
+            <div class="imgbb-file-list" id="imgbbFileList"></div>
+            <div class="imgbb-tip">
+                上传后映射存入导出 JSON 的 <code>imgbbUrls</code> 字段。<br>
+                Key 获取: <a href="https://api.imgbb.com/" target="_blank">api.imgbb.com</a>
+            </div>
+        </div>
+        <div class="status"><span data-i18n="editor.resource_tip">💡 资源键名需与剧本中的字段匹配</span></div>
+    </div>
+
+    <!-- 中间区域：两个独立卡片上下排列 -->
+    <div class="middle-column">
+        <!-- 卡片1：剧本场景列表 -->
+        <div class="scene-list-panel">
+            <h3 data-i18n="editor.scene_list">📜 剧本场景列表</h3>
+            <div class="scene-table-wrapper">
+                <table class="scene-table" id="sceneTable">
+                    <thead>
+                        <tr><th><span data-i18n="editor.th_index">索引</span></th><th><span data-i18n="editor.th_speaker">说话人</span></th><th>文本(简)</th><th><span data-i18n="editor.th_bg">背景</span></th><th><span data-i18n="editor.th_sprite">立绘</span></th><th><span data-i18n="editor.th_cg">CG</span></th><th><span data-i18n="editor.th_choice">分支</span></th><th><span data-i18n="editor.th_ops">操作</span></th><th><span data-i18n="editor.th_subtitle">副标题</span></th></tr>
+                    </thead>
+                    <tbody id="sceneTableBody"></tbody>
+                </table>
+            </div>
+            <div class="btn-group">
+                <button class="btn-secondary" id="addSceneBtn" data-i18n-btn="editor.add_scene">+ 新增场景</button>
+                <button class="btn-secondary" id="insertSceneBtn" data-i18n-btn="editor.insert_before">📍 在当前位置前插入</button>
+                <button class="btn-secondary" id="deleteSceneBtn" data-i18n-btn="editor.delete_scene">🗑 删除选中</button>
+                <button class="btn-secondary" id="locateNextChapterBtn" data-i18n-btn="editor.next_chapter">⏩ 定位到下一个章节</button>
+            </div>
+            <!-- 搜索栏 -->
+            <div class="search-panel">
+                <div class="search-row">
+                    <input type="text" id="searchInput" data-i18n-placeholder="editor.search_placeholder" placeholder="搜索说话人、对话、背景、立绘、CG、地点、副标题...">
+                    <button class="btn-secondary fill-button" id="searchNextBtn" data-i18n-btn="editor.search_next">🔍 查找下一个</button>
+                    <button class="btn-secondary fill-button" id="searchPrevBtn" data-i18n-btn="editor.search_prev">⬆️ 上一个</button>
+                </div>
+                <div class="status search-status" id="searchStatus"></div>
+            </div>
+        </div>
+
+        <!-- 卡片2：游戏内预览（独立） -->
+        <div class="preview-panel">
+            <h3 data-i18n="editor.preview_panel">🎬 游戏内预览</h3>
+            <div class="preview-game-wrapper" id="previewGameWrapper">
+                <div class="preview-visual-area" id="previewVisualArea">
+                    <div class="preview-bg-layer" id="previewBgLayer"></div>
+                    <div class="preview-bg-layer-2" id="previewBgLayer2"></div>
+                    <div class="preview-location-hint" id="previewLocationHint"></div>
+                    <div class="preview-sprite-wrapper" id="previewSpriteWrapper">
+                        <img id="previewSpriteImg" src="" alt="立绘">
+                    </div>
+                    <div class="preview-multi-sprite-container" id="previewMultiSpriteContainer"></div>
+                    <div class="preview-vignette-overlay" id="previewVignetteOverlay"></div>
+                    <div class="preview-flash-overlay" id="previewFlashOverlay"></div>
+                    <div class="preview-letterbox-overlay" id="previewLetterboxOverlay"></div>
+                    <div class="preview-affinity-display" id="previewAffinityDisplay">
+                        <span class="preview-affinity-label"></span>
+                        <div class="preview-affinity-fill-outer"><div class="preview-affinity-fill-inner"></div></div>
+                    </div>
+                    <div class="preview-choices-container" id="previewChoicesContainer"></div>
+                    <div class="preview-video-overlay" id="previewVideoOverlay">
+                        <video id="previewVideoPlayer" playsinline webkit-playsinline></video>
+                        <div class="preview-video-hint" id="previewVideoHint" data-i18n="editor.click_skip_video">点击跳过视频</div>
+                    </div>
+                </div>
+                <div class="preview-dialog-area" id="previewDialogArea">
+                    <div class="preview-speaker-name" id="previewSpeakerName">
+                        <span class="preview-subtitle-tag" id="previewSubtitleTag"></span>
+                        <span id="previewSpeaker">——</span>
+                    </div>
+                    <div class="preview-dialog-text" id="previewDialogText">对话预览区域</div>
+                </div>
+            </div>
+            <div class="preview-actions">
+                <button class="btn-secondary fill-button" id="refreshPreviewBtn" data-i18n-btn="editor.refresh_preview">🔄 刷新预览</button>
+                <button class="btn-secondary fill-button" id="previewCgBtn" data-i18n-btn="editor.preview_cg">🎞️ 预览当前场景CG</button>
+                <button class="btn-secondary fill-button" id="toggleFlowchartBtn" data-i18n-btn="editor.toggle_flowchart">🗺️ 路线流程图</button>
+            </div>
+            <div id="cgPreviewInfo" class="cg-preview-tip"></div>
+        </div>
+    </div>
+
+    <!-- 右侧编辑+预览 -->
+    <div class="right-column">
+        <div class="detail-panel">
+            <h3 data-i18n="editor.detail_panel">✏️ 编辑场景详情</h3>
+            <div class="form-group"><label>索引</label><input type="text" id="editIdx" readonly></div>
+            <div class="form-group"><label><span data-i18n="editor.speaker_label">说话人</span></label><input type="text" id="editSpeaker"></div>
+            <div class="form-group"><label><span data-i18n="editor.text_label">对话文本</span></label>
+                <div class="bbcode-bar" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+                    <button class="bbcode-btn" data-tag="c" data-attr="red" style="color:#ff6b6b;" data-i18n="editor.bb_red">红</button>
+                    <button class="bbcode-btn" data-tag="c" data-attr="blue" style="color:#6ba3ff;" data-i18n="editor.bb_blue">蓝</button>
+                    <button class="bbcode-btn" data-tag="c" data-attr="gold" style="color:#f5da8c;" data-i18n="editor.bb_gold">金</button>
+                    <button class="bbcode-btn" data-tag="c" data-attr="green" style="color:#6fcf6f;" data-i18n="editor.bb_green">绿</button>
+                    <button class="bbcode-btn" data-tag="c" data-attr="pink" style="color:#ff9ecf;" data-i18n="editor.bb_pink">粉</button>
+                    <button class="bbcode-btn" data-tag="i" style="font-style:italic;" data-i18n="editor.bb_italic">斜体</button>
+                    <button class="bbcode-btn" data-tag="b" style="font-weight:bold;" data-i18n="editor.bb_bold">粗体</button>
+                    <button class="bbcode-btn" data-tag="shake" data-i18n="editor.bb_shake">震动</button>
+                    <button class="bbcode-btn" data-tag="big" data-i18n="editor.bb_big">放大</button>
+                    <button class="bbcode-btn" data-tag="small" data-i18n="editor.bb_small">缩小</button>
+                    <span style="flex:1;"></span>
+                    <button class="bbcode-btn" id="aiRewriteBtn" title="AI 改写当前对白" style="color:#dba541;border-color:#dba541;" data-i18n="editor.ai_rewrite">🤖 AI 改写</button>
+                    <select id="aiRewriteTone" style="font-size:0.65rem;background:#1e1c24;border:1px solid rgba(219,165,65,0.4);border-radius:6px;color:#c0b090;padding:2px 6px;">
+                        <option value="gentle" data-i18n="editor.ai_tone_gentle">更温柔</option>
+                        <option value="lively" data-i18n="editor.ai_tone_lively">更活泼</option>
+                        <option value="literary" data-i18n="editor.ai_tone_literary">更文艺</option>
+                        <option value="concise" data-i18n="editor.ai_tone_concise">更简洁</option>
+                        <option value="emotional" data-i18n="editor.ai_tone_deep">更深情</option>
+                    </select>
+                </div>
+                <textarea id="editText" rows="3"></textarea>
+            </div>
+            <div class="form-group"><label><span data-i18n="editor.bg_label">背景键</span></label><input type="text" id="editBg" placeholder="classroom / dorm"></div>
+            <div class="form-group"><label>🎭 多立绘（sprites数组）</label>
+                <div id="multiSpriteEditor" style="border:1px solid rgba(219,165,65,0.3); border-radius:8px; padding:8px; margin-top:4px;">
+                    <div id="multiSpriteList"></div>
+                    <button class="btn-secondary" id="addSpriteSlotBtn" data-i18n-btn="editor.add_sprite" style="margin-top:6px; font-size:0.75rem;">+ 添加立绘位</button>
+                </div>
+                <div style="font-size:0.65rem; color:#a09888; margin-top:2px;" data-i18n="editor.multi_sprite_hint">留空则不使用多立绘，回退到旧版单选立绘</div>
+            </div>
+            <div class="form-group"><label>立绘键（旧版单选，sprites为空时生效）</label>
+                <select id="editSprite">
+                    <option value="" data-i18n="editor.trans_none">无</option>
+                </select>
+            </div>
+            <div class="form-group"><label><span data-i18n="editor.bgm_label">BGM键</span></label><input type="text" id="editBgm"></div>
+            <div class="form-group">
+                <label>🔊 音效键 (SE)</label>
+                <select id="editSeKey">
+                    <option value="">无</option>
+                </select>
+            </div>
+            <div class="form-group"><label><span data-i18n="editor.location_label">地点提示</span></label><input type="text" id="editLocation"></div>
+            <div class="form-group">
+                <label>🧹 清场 (clearStage)</label>
+                <select id="editClearStage"><option value="false" data-i18n="nav.no">否</option><option value="true" data-i18n="nav.yes">是</option></select>
+                <span style="font-size:0.65rem;color:#a09888;">是=立绘滑出离场</span>
+            </div>
+            <div class="form-group">
+                <label>🎙️ 语音键 (voice)</label>
+                <select id="editVoice"><option value="">无</option></select>
+            </div>
+            <div class="form-group">
+                <label>🏁 结局键 (endingKey)</label>
+                <input type="text" id="editEndingKey" placeholder="例如：good_ending">
+            </div>
+            <div class="form-group">
+                <label>🏁 结局标题 (endingTitle)</label>
+                <input type="text" id="editEndingTitle" placeholder="例如：温柔的再见">
+            </div>
+            <div class="form-group">
+                <label>💗 好感度 (affinity) 0-100</label>
+                <input type="number" id="editAffinity" value="0" min="0" max="100" step="1" style="width:100px;">
+                <span style="font-size:0.65rem;color:#a09888;">设为-1可隐藏好感度条</span>
+            </div>
+            <div class="form-group">
+                <label>💗 好感度标签 (affinityLabel)</label>
+                <input type="text" id="editAffinityLabel" placeholder="例如：文小管好感度">
+            </div>
+            <div class="form-group"><label><span data-i18n="editor.next_idx">下一个索引</span></label><input type="number" id="editNext" value="-1"></div>
+            <div class="form-group"><label><span data-i18n="editor.chapter_trans">章节转场</span></label>
+                <select id="editTrigger"><option value="false">false</option><option value="true">true</option></select>
+            </div>
+            <div class="form-group">
+                <label>📖 章节副标题（仅当转场为 true 时生效）</label>
+                <input type="text" id="editSubtitle" placeholder="例如：新的篇章">
+            </div>
+            <!-- 新增：场景过渡效果 -->
+            <div class="form-group">
+                <label>🎬 场景过渡效果 (transition)</label>
+                <select id="editTransition">
+                    <option value="">无</option>
+                    <option value="fade" data-i18n="editor.trans_fade_black">黑幕淡入淡出</option>
+                    <option value="fadeWhite" data-i18n="editor.trans_fade_white">白幕淡入淡出</option>
+                    <option value="slideLeft">从右滑入</option>
+                    <option value="slideRight">从左滑入</option>
+                    <option value="slideUp">从下滑入</option>
+                    <option value="slideDown">从上滑入</option>
+                    <option value="curtainOpen">幕布拉开</option>
+                    <option value="curtainClose">幕布合拢</option>
+                    <option value="blinds">百叶窗</option>
+                    <option value="zoomIn">圆形放大</option>
+                </select>
+            </div>
+            <!-- 新增：视频键 -->
+            <div class="form-group">
+                <label>🎥 插入视频 (videoKey)</label>
+                <select id="editVideoKey">
+                    <option value="">无</option>
+                </select>
+            </div>
+            <!-- 新增：变量赋值 -->
+            <div class="form-group">
+                <label>📝 变量赋值 (setVar)</label>
+                <div class="kv-editor" id="setVarEditor">
+                    <div id="setVarList"></div>
+                    <button class="kv-add-btn" id="addSetVarBtn">+ 添加变量</button>
+                </div>
+                <span style="font-size:0.65rem;color:#a09888;">设置游戏变量，用于条件跳转或文本插值 {varName}</span>
+            </div>
+            <!-- 新增：条件跳转 -->
+            <div class="form-group">
+                <label>🔀 条件跳转 (conditionNext)</label>
+                <div class="kv-editor" id="condNextEditor">
+                    <div id="condNextList"></div>
+                    <button class="kv-add-btn" id="addCondNextBtn">+ 添加条件</button>
+                </div>
+                <span style="font-size:0.65rem;color:#a09888;">条件表达式如 affection>=50，default 为默认跳转</span>
+            </div>
+            <!-- CG插入字段 -->
+            <div class="form-group">
+                <label>🎞️ 插入CG (cgKey)</label>
+                <select id="editCgKey">
+                    <option value="">无</option>
+                </select>
+            </div>
+            <!-- 演出效果 -->
+            <div class="form-group">
+                <label>🎬 画面演出效果</label>
+                <div class="effects-grid" id="effectsGrid">
+                    <div class="effects-category">
+                        <span class="effects-cat-label">🔘 一次性滤镜</span>
+                        <label class="eff-chip"><input type="checkbox" data-eff="sepia"><span data-i18n="editor.effect_sepia">怀旧</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="grayscale"><span data-i18n="editor.effect_bw">黑白</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="blur"><span data-i18n="editor.effect_blur">模糊</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="bright"><span data-i18n="editor.effect_bright">增亮</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="dark"><span data-i18n="editor.effect_dark">变暗</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="saturate-high"><span data-i18n="editor.effect_sat_high">高饱和</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="saturate-low"><span data-i18n="editor.effect_sat_low">低饱和</span></label>
+                    </div>
+                    <div class="effects-category">
+                        <span class="effects-cat-label">⚡ 瞬间触发</span>
+                        <label class="eff-chip"><input type="checkbox" data-eff="shake"><span data-i18n="editor.effect_shake" data-i18n="editor.bb_shake">震动</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="flash"><span data-i18n="editor.effect_flash">白闪</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="zoom-in"><span data-i18n="editor.effect_zoom">画面推进</span></label>
+                    </div>
+                    <div class="effects-category">
+                        <span class="effects-cat-label">🎨 持续氛围</span>
+                        <label class="eff-chip"><input type="checkbox" data-eff="mood-warm"><span data-i18n="editor.effect_warm">暖色调</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="mood-cool"><span data-i18n="editor.effect_cool">冷色调</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="mood-dramatic"><span data-i18n="editor.effect_dramatic">戏剧化</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="vignette"><span data-i18n="editor.effect_vignette">暗角</span></label>
+                        <label class="eff-chip"><input type="checkbox" data-eff="letterbox"><span data-i18n="editor.effect_letterbox">电影黑条</span></label>
+                    </div>
+                    <div class="effects-category">
+                        <span class="effects-cat-label">🧹 清理</span>
+                        <label class="eff-chip"><input type="checkbox" data-eff="clear"><span data-i18n="editor.effect_clear">清除所有效果</span></label>
+                    </div>
+                </div>
+                <div class="effects-duration-row">
+                    <label style="font-size:0.75rem;color:#a09888;"><span data-i18n="editor.duration_label">效果持续时间(ms，0=持久)</span></label>
+                    <input type="number" id="editEffectsDuration" value="0" min="0" step="100" style="width:100px;">
+                </div>
+            </div>
+            <!-- 分支选项字段 -->
+            <div class="form-group">
+                <label>🔀 <span data-i18n="editor.has_choices">是否含有分支选项</span></label>
+                <select id="editHasChoices">
+                    <option value="false" data-i18n="nav.no">否</option>
+                    <option value="true" data-i18n="nav.yes">是</option>
+                </select>
+            </div>
+            <div id="choicesEditorWrapper" style="display: none;">
+                <label style="display: block; margin-bottom: 8px; color: #e0c88a; font-size: 0.8rem;"><span data-i18n="editor.choices_editor">📋 分支选项编辑</span></label>
+                <div id="choicesEditor" class="choices-editor"></div>
+                <button class="add-choice-btn" id="addChoiceBtn" data-i18n-btn="editor.add_choice">+ 添加选项</button>
+            </div>
+            <div class="save-export">
+                <button class="btn-secondary" id="undoBtn" data-i18n-btn="editor.undo" disabled title="撤销 (Ctrl+Z)">⏪ 撤销</button>
+                <button class="btn-secondary" id="redoBtn" data-i18n-btn="editor.redo" disabled title="重做 (Ctrl+Y)">⏩ 重做</button>
+            </div>
+            <div class="save-export">
+                <button class="btn-primary" id="updateSceneBtn" data-i18n-btn="editor.update_scene">💾 更新场景 (Ctrl+S)</button>
+                <button class="btn-primary" id="exportFullBtn" data-i18n-btn="editor.export_project">📦 导出完整项目 (Ctrl+E)</button>
+                <button class="btn-secondary" id="validateBtn" data-i18n-btn="editor.validate">🔍 项目诊断</button>
+            </div>
+            <div class="save-export">
+                <button class="btn-secondary" id="importFullBtn" data-i18n-btn="editor.import_project">📂 导入完整项目</button>
+                <button class="btn-secondary" id="resetDemoBtn" data-i18n-btn="editor.reset_demo">🔄 重置默认数据</button>
+            </div>
+            <div class="save-export">
+                <button class="btn-secondary" id="exportChunkedBtn" data-i18n-btn="editor.chunked_export">📦 分章导出（懒加载）</button>
+            </div>
+            <!-- 角色设定档案 -->
+            <div class="form-group" style="margin-top:12px; border-top:1px solid rgba(219,165,65,0.25); padding-top:10px;">
+                <label style="color:#dba541;"><span data-i18n="editor.char_profiles">🎭 角色设定档案（供后日谈AI使用）</span></label>
+                <div style="font-size:0.65rem;color:#887860;margin-bottom:6px;" data-i18n="editor.profiles_hint">导出时会包含在 JSON 的 characters 字段中</div>
+                <div id="characterProfilesEditor">
+                    <div id="charProfileList"></div>
+                    <button class="kv-add-btn" id="addCharProfileBtn" data-i18n-btn="editor.add_char">+ 添加角色</button>
+                </div>
+            </div>
+            <div class="status" id="statusMsg">✅ 就绪</div>
+        </div>
+
+        <!-- 流程图面板（可折叠） -->
+        <div class="flowchart-panel" id="flowchartPanel" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h3 style="margin:0;">🗺️ 路线流程图</h3>
+                <button class="btn-secondary" id="closeFlowchartBtn" style="font-size:0.7rem;">✕ 关闭</button>
+            </div>
+            <canvas id="flowchartCanvas" width="800" height="500" style="width:100%;border:1px solid rgba(219,165,65,0.3);border-radius:8px;background:#0f0e12;"></canvas>
+            <div style="font-size:0.65rem;color:#887860;margin-top:4px;">🔵 普通场景 · 🟢 章节开始 · 🟡 分支选项 · 🔴 结局 · 滚轮缩放 · 拖拽平移</div>
+        </div>
+    </div>
+</div>
+
+<!-- 右键菜单 -->
+<div id="contextMenu" class="context-menu" style="display:none;">
+    <div class="context-menu-item" data-action="update">💾 更新场景 (Ctrl+S)</div>
+    <div class="context-menu-item" data-action="add">➕ 新增场景 (Ctrl+N)</div>
+    <div class="context-menu-item" data-action="insert">📍 在当前位置前插入 (Ctrl+Shift+N)</div>
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item" data-action="undo">⏪ 撤销 (Ctrl+Z)</div>
+    <div class="context-menu-item" data-action="redo">⏩ 重做 (Ctrl+Y)</div>
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item" data-action="delete">🗑 删除选中 (Del)</div>
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item" data-action="refresh">🔄 刷新预览 (Ctrl+R)</div>
+    <div class="context-menu-item" data-action="validate">🔍 项目诊断</div>
+    <div class="context-menu-item" data-action="export" data-i18n="editor.context_export">📦 导出完整项目 (Ctrl+E)</div>
+    <div class="context-menu-item" data-action="locate">⏩ 定位下一个章节</div>
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item context-menu-danger" data-action="reset" data-i18n="editor.context_reset">⚠️ 重置默认数据</div>
+</div>
+<div id="imagePreviewModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 90vw; max-height: 90vh; text-align: center;">
+        <span class="close-modal" id="closeImagePreview">&times;</span>
+        <img id="imagePreviewImg" src="" alt="预览" style="max-width: 100%; max-height: 80vh; object-fit: contain;">
+        <div class="status" style="margin-top: 8px;" id="imagePreviewCaption"></div>
+    </div>
+</div>
+<div id="videoPreviewModal" class="video-preview-modal">
+    <span class="close-video-preview" id="closeVideoPreview">&times;</span>
+    <video id="videoPreviewPlayer" controls playsinline webkit-playsinline></video>
+    <div class="video-preview-caption" id="videoPreviewCaption"></div>
+</div>
+<script>
+    // --------------------------------------------------------------
+    // 工具函数
+    // --------------------------------------------------------------
+    function escHtml(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // --------------------------------------------------------------
+    // 资源映射
+    // --------------------------------------------------------------
+    let imgbbUrlMap = {}; // 本地路径 → ImgBB URL（导出时嵌入 JSON）
+    let assets = {
+        bg: {
+            campus: "assets/bg/campus.png"
+        },
+        sprites: {
+            char_default: "assets/sprites/character_default.png"
+        },
+        bgm: {
+            theme: "assets/bgm/theme.mp3"
+        },
+        cg: {},
+        se: {},
+        voice: {
+            // 语音资源（可选）
+            // example: "Voice/example.mp3"
+        },
+        video: {
+            // 视频资源（可选）
+            // example: "Video/opening.mp4"
+        }
+    };
+
+    // 默认场景数据（引擎示例）
+    let scenesData = [
+        { "bg": "campus", "speaker": "Narrator", "text": "Welcome to Ginkgo Engine — an open-source web visual novel engine.", "sprite": null, "sprites": [], "bgm": "theme", "locationHint": "Demo Scene", "next": 1, "triggerChapterTransition": false, "cgKey": null, "hasChoices": false, "choices": [] , "subtitle": "", "seKey": null, "effects": [{ "type": "vignette", "duration": 3000 }], "clearStage": false, "voice": null, "endingKey": null, "endingTitle": null, "affinity": undefined, "affinityLabel": "", "transition": "", "videoKey": null, "setVar": null, "conditionNext": null },
+        { "bg": "campus", "speaker": "System", "text": "Edit scenes in the right panel. [b]Try the AI co-writer[/b] or open the flowchart.", "sprite": "char_default", "sprites": [], "bgm": "theme", "locationHint": "Editor Demo", "next": -1, "triggerChapterTransition": false, "cgKey": null, "hasChoices": true, "choices": [{"text": "Sounds good!", "nextIdx": 2}, {"text": "Exit demo", "nextIdx": -1}] , "subtitle": "", "seKey": null, "effects": [], "clearStage": false, "voice": null, "endingKey": null, "endingTitle": null, "affinity": undefined, "affinityLabel": "", "transition": "", "videoKey": null, "setVar": null, "conditionNext": null }
+    ];
+
+    let currentSelectedIndex = 0;
+
+    // ===== 撤销/重做 系统 =====
+    const MAX_UNDO = 50;
+    let undoStack = [];   // { scenesData, assets, imgbbUrlMap }
+    let redoStack = [];
+    let _undoGroupId = 0; // 同组操作（如重置默认数据）不在同一group
+
+    function pushUndo() {
+        redoStack = [];  // 新操作清空重做栈
+        var snap = {
+            scenes: JSON.parse(JSON.stringify(scenesData)),
+            assets: JSON.parse(JSON.stringify(assets)),
+            imgbb: JSON.parse(JSON.stringify(imgbbUrlMap)),
+            chars: JSON.parse(JSON.stringify(characterProfiles)),
+            selectedIdx: currentSelectedIndex
+        };
+        undoStack.push(snap);
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        updateUndoRedoButtons();
+    }
+
+    function undo() {
+        if (undoStack.length === 0) { statusMsg.innerText = t('editor.undo_empty'); return; }
+        // 保存当前状态到重做栈
+        var curSnap = {
+            scenes: JSON.parse(JSON.stringify(scenesData)),
+            assets: JSON.parse(JSON.stringify(assets)),
+            imgbb: JSON.parse(JSON.stringify(imgbbUrlMap)),
+            selectedIdx: currentSelectedIndex
+        };
+        redoStack.push(curSnap);
+        // 恢复上一个状态
+        var prev = undoStack.pop();
+        scenesData = prev.scenes;
+        assets = prev.assets;
+        imgbbUrlMap = prev.imgbb;
+        characterProfiles = prev.chars || {};
+        refreshResourceDisplays();
+        renderSceneTable();
+        renderCharacterProfiles();
+        if (prev.selectedIdx >= 0 && prev.selectedIdx < scenesData.length) {
+            selectScene(prev.selectedIdx);
+        } else {
+            selectScene(0);
+        }
+        updateUndoRedoButtons();
+        refreshImgbbStats();
+        statusMsg.innerText = t('editor.undo_done', undoStack.length);
+    }
+
+    function redo() {
+        if (redoStack.length === 0) { statusMsg.innerText = '⏩ ' + t('editor.redo_empty'); return; }
+        // 保存当前状态到撤销栈
+        var curSnap = {
+            scenes: JSON.parse(JSON.stringify(scenesData)),
+            assets: JSON.parse(JSON.stringify(assets)),
+            imgbb: JSON.parse(JSON.stringify(imgbbUrlMap)),
+            selectedIdx: currentSelectedIndex
+        };
+        undoStack.push(curSnap);
+        // 恢复重做状态
+        var next = redoStack.pop();
+        scenesData = next.scenes;
+        assets = next.assets;
+        imgbbUrlMap = next.imgbb;
+        refreshResourceDisplays();
+        renderSceneTable();
+        if (next.selectedIdx >= 0 && next.selectedIdx < scenesData.length) {
+            selectScene(next.selectedIdx);
+        } else {
+            selectScene(0);
+        }
+        updateUndoRedoButtons();
+        refreshImgbbStats();
+        statusMsg.innerText = t('editor.redo_done', redoStack.length);
+    }
+
+    function updateUndoRedoButtons() {
+        var undoBtn = document.getElementById('undoBtn');
+        var redoBtn = document.getElementById('redoBtn');
+        if (undoBtn) {
+            undoBtn.disabled = undoStack.length === 0;
+            undoBtn.title = '撤销 (Ctrl+Z) — ' + undoStack.length + ' 步可用';
+        }
+        if (redoBtn) {
+            redoBtn.disabled = redoStack.length === 0;
+            redoBtn.title = '重做 (Ctrl+Y) — ' + redoStack.length + ' 步可用';
+        }
+    }
+
+    // ===== 角色设定档案 =====
+    let characterProfiles = {};  // { characterId: { name, personality, background, speechStyle, extraNotes, avatarKey, systemPrompt } }
+
+    function renderCharacterProfiles() {
+        var list = document.getElementById('charProfileList');
+        if (!list) return;
+        var keys = Object.keys(characterProfiles);
+        if (keys.length === 0) { list.innerHTML = '<div style="color:#665;font-size:0.7rem;">' + t('editor.no_char') + '</div>'; return; }
+        list.innerHTML = '';
+        keys.forEach(function(id) {
+            var p = characterProfiles[id];
+            var div = document.createElement('div');
+            div.style.cssText = 'border:1px solid rgba(219,165,65,0.3);border-radius:8px;padding:8px;margin-bottom:6px;';
+            div.innerHTML =
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+                '<input value="' + escHtml(p.name || '') + '" placeholder="角色名" data-cid="' + id + '" data-field="name" style="background:#1e1c24;border:1px solid rgba(219,165,65,0.4);border-radius:4px;color:#f0e8da;padding:2px 6px;font-size:0.75rem;width:120px;">' +
+                '<button class="kv-remove" data-cid="' + id + '">✕ 删除</button>' +
+                '</div>' +
+                '<textarea data-cid="' + id + '" data-field="personality" placeholder="性格描述..." rows="2" style="width:100%;background:#1e1c24;border:1px solid rgba(219,165,65,0.4);border-radius:4px;color:#f0e8da;font-size:0.7rem;padding:4px;resize:vertical;margin-bottom:4px;">' + escHtml(p.personality || '') + '</textarea>' +
+                '<textarea data-cid="' + id + '" data-field="background" placeholder="背景故事..." rows="2" style="width:100%;background:#1e1c24;border:1px solid rgba(219,165,65,0.4);border-radius:4px;color:#f0e8da;font-size:0.7rem;padding:4px;resize:vertical;margin-bottom:4px;">' + escHtml(p.background || '') + '</textarea>' +
+                '<input data-cid="' + id + '" data-field="speechStyle" placeholder="说话风格" style="width:100%;background:#1e1c24;border:1px solid rgba(219,165,65,0.4);border-radius:4px;color:#f0e8da;font-size:0.7rem;padding:4px;margin-bottom:4px;" value="' + escHtml(p.speechStyle || '') + '">' +
+                '<input data-cid="' + id + '" data-field="extraNotes" placeholder="额外备注" style="width:100%;background:#1e1c24;border:1px solid rgba(219,165,65,0.4);border-radius:4px;color:#f0e8da;font-size:0.7rem;padding:4px;" value="' + escHtml(p.extraNotes || '') + '">';
+            list.appendChild(div);
+        });
+        // Bind change events
+        list.querySelectorAll('[data-cid][data-field]').forEach(function(el) {
+            el.addEventListener('input', function() {
+                var cid = el.dataset.cid;
+                var field = el.dataset.field;
+                if (characterProfiles[cid]) {
+                    characterProfiles[cid][field] = el.value;
+                }
+            });
+        });
+        list.querySelectorAll('.kv-remove').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                delete characterProfiles[btn.dataset.cid];
+                renderCharacterProfiles();
+            });
+        });
+    }
+
+    function addCharacterProfile() {
+        var id = prompt('角色ID（英文，如 wxg, linchen）:', 'new_char');
+        if (!id) return;
+        if (characterProfiles[id]) { statusMsg.innerText = '⚠️ 角色ID已存在'; return; }
+        characterProfiles[id] = { name: id, personality: '', background: '', speechStyle: '', extraNotes: '', systemPrompt: '' };
+        renderCharacterProfiles();
+    }
+
+    // ===== AI 协同写作 =====
+    function aiRewriteDialogue() {
+        var text = editText.value.trim();
+        if (!text) { statusMsg.innerText = '⚠️ 请先输入对白文本'; return; }
+        var tone = document.getElementById('aiRewriteTone').value || 'gentle';
+        var toneMap = {
+            gentle: '更温柔、更含蓄',
+            lively: '更活泼、更有活力',
+            literary: '更文艺、更有文学感',
+            concise: '更简洁、更精炼',
+            emotional: '更深情、更有感染力'
+        };
+        var apiKey = localStorage.getItem('imgbb_api_key') || '';
+        // 也检查是否有 epilogue 的 key
+        var epKey = (function() {
+            try {
+                var raw = localStorage.getItem('epilogue_deepseek_key') || '';
+                if (raw.startsWith('sk-')) return raw;
+                return '';
+            } catch(e) { return ''; }
+        })();
+        if (!apiKey && !epKey) {
+            apiKey = prompt('请输入 DeepSeek API Key (sk-...):', '');
+            if (!apiKey) return;
+        }
+        var key = epKey || apiKey;
+        if (!key.startsWith('sk-')) { statusMsg.innerText = '⚠️ API Key 格式无效'; return; }
+
+        statusMsg.innerText = t('editor.ai_progress');
+        var speaker = editSpeaker.value || '角色';
+        var prompt = '请将以下视觉小说对白改写为' + toneMap[tone] + '的风格。保持原意不变，输出纯改写后的文本（不要加任何解释、引号或前缀）。\n\n说话人: ' + speaker + '\n原对白: ' + text;
+
+        fetch('https://api.deepseek.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+            body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 300 })
+        }).then(function(r) { return r.json(); })
+          .then(function(data) {
+              var rewritten = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+              rewritten = rewritten.trim();
+              if (rewritten) {
+                  editText.value = rewritten;
+                  statusMsg.innerText = t('editor.ai_done', toneMap[tone]);
+              } else {
+                  statusMsg.innerText = '⚠️ AI 未返回有效内容';
+              }
+          }).catch(function(e) {
+              statusMsg.innerText = t('editor.ai_fail', e.message);
+          });
+    }
+
+    // ===== 分章导出（懒加载） =====
+    function exportChunkedProject() {
+        var chapters = [];
+        var currentCh = null;
+        for (var i = 0; i < scenesData.length; i++) {
+            var s = scenesData[i];
+            if (!currentCh || (s.triggerChapterTransition && currentCh.scenes.length > 0)) {
+                if (currentCh) chapters.push(currentCh);
+                currentCh = { title: s.subtitle || ('章节' + (chapters.length + 1)), startIdx: i, scenes: [] };
+            }
+            currentCh.scenes.push(s);
+        }
+        if (currentCh && currentCh.scenes.length > 0) chapters.push(currentCh);
+        // Build index
+        var index = { chapters: [], assets: assets, characters: characterProfiles };
+        for (var c = 0; c < chapters.length; c++) {
+            var ch = chapters[c];
+            index.chapters.push({ title: ch.title, startIdx: ch.startIdx, sceneCount: ch.scenes.length, file: 'chapter_' + c + '.json' });
+        }
+        if (imgbbUrlMap && Object.keys(imgbbUrlMap).length > 0) index.imgbbUrls = imgbbUrlMap;
+        // Download index
+        download(JSON.stringify(index, null, 2), 'galgame_index.json');
+        // Download each chapter (staggered to avoid browser blocking)
+        chapters.forEach(function(ch, idx) {
+            setTimeout(function() {
+                download(JSON.stringify({ chapterIndex: idx, title: ch.title, scenes: ch.scenes }, null, 2), 'chapter_' + idx + '.json');
+            }, idx * 400);
+        });
+        statusMsg.innerText = t('editor.chunk_export_ok', chapters.length);
+    }
+
+    // ===== 流程图渲染 =====
+    var _flowchartScale = 1, _flowchartPanX = 0, _flowchartPanY = 0, _flowchartDragging = false, _flowchartDragStart = null;
+    function toggleFlowchart() {
+        var panel = document.getElementById('flowchartPanel');
+        if (!panel) return;
+        if (panel.style.display === 'none' || !panel.style.display) {
+            panel.style.display = 'block';
+            renderFlowchart();
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+    function renderFlowchart() {
+        var canvas = document.getElementById('flowchartCanvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        var N = scenesData.length;
+        if (N === 0) { ctx.fillStyle = '#887860'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('无场景数据', W/2, H/2); return; }
+        // Layout: simple layered DAG
+        var layers = []; // array of arrays of scene indices
+        var visited = {}, queue = [0], dist = {0: 0};
+        while (queue.length) {
+            var u = queue.shift();
+            if (visited[u]) continue;
+            visited[u] = true;
+            var d = dist[u] || 0;
+            while (layers.length <= d) layers.push([]);
+            layers[d].push(u);
+            var s = scenesData[u];
+            var nexts = [];
+            if (s.next >= 0) nexts.push(s.next);
+            if (s.choices) s.choices.forEach(function(c) { if (c.nextIdx >= 0) nexts.push(c.nextIdx); });
+            if (s.conditionNext && typeof s.conditionNext === 'object') {
+                Object.keys(s.conditionNext).forEach(function(k) { if (s.conditionNext[k] >= 0) nexts.push(s.conditionNext[k]); });
+            }
+            nexts.forEach(function(v) {
+                if (!visited[v]) { dist[v] = (dist[u] || 0) + 1; queue.push(v); }
+            });
+        }
+        // Add unreachable nodes at end
+        for (var i = 0; i < N; i++) {
+            if (!visited[i]) {
+                var last = layers.length > 0 ? layers.length : 0;
+                while (layers.length <= last) layers.push([]);
+                layers[last].push(i);
+            }
+        }
+        var L = layers.length;
+        var maxInLayer = Math.max.apply(null, layers.map(function(l) { return l.length; })) || 1;
+        var cellW = Math.min(100, W / maxInLayer);
+        var cellH = Math.min(60, H / L);
+        var offX = 50, offY = 40;
+        // Apply pan & zoom
+        ctx.save();
+        ctx.translate(_flowchartPanX, _flowchartPanY);
+        ctx.scale(_flowchartScale, _flowchartScale);
+        // Draw edges first
+        ctx.strokeStyle = 'rgba(219,165,65,0.35)';
+        ctx.lineWidth = 1;
+        for (var i = 0; i < N; i++) {
+            var si = scenesData[i];
+            var li = findLayer(layers, i);
+            if (li < 0) continue;
+            var xi = offX + cellW * (layers[li].indexOf(i) + 0.5);
+            var yi = offY + cellH * (li + 0.5);
+            var drawEdge = function(ti) {
+                if (ti < 0 || ti >= N) return;
+                var lt = findLayer(layers, ti);
+                if (lt < 0) return;
+                var xt = offX + cellW * (layers[lt].indexOf(ti) + 0.5);
+                var yt = offY + cellH * (lt + 0.5);
+                ctx.beginPath();
+                ctx.moveTo(xi, yi);
+                ctx.lineTo(xt, yt);
+                ctx.stroke();
+            };
+            if (si.next >= 0) drawEdge(si.next);
+            if (si.choices) si.choices.forEach(function(c) { if (c.nextIdx >= 0) drawEdge(c.nextIdx); });
+            if (si.conditionNext && typeof si.conditionNext === 'object') {
+                Object.keys(si.conditionNext).forEach(function(k) { drawEdge(si.conditionNext[k]); });
+            }
+        }
+        // Draw nodes
+        for (var i = 0; i < N; i++) {
+            var si2 = scenesData[i];
+            var li2 = findLayer(layers, i);
+            if (li2 < 0) continue;
+            var xi2 = offX + cellW * (layers[li2].indexOf(i) + 0.5);
+            var yi2 = offY + cellH * (li2 + 0.5);
+            var r = 14;
+            // Node color by type
+            if (si2.endingKey) ctx.fillStyle = '#ff6b6b';
+            else if (si2.triggerChapterTransition) ctx.fillStyle = '#6adb41';
+            else if (si2.hasChoices && si2.choices && si2.choices.length > 0) ctx.fillStyle = '#f0c040';
+            else ctx.fillStyle = '#4a90d9';
+            if (i === currentSelectedIndex) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; }
+            else { ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; }
+            ctx.beginPath();
+            ctx.arc(xi2, yi2, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Label
+            ctx.fillStyle = '#f0e8da';
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(i, xi2, yi2 + 3);
+            // Speaker name above
+            if (si2.speaker && si2.speaker !== ' ') {
+                ctx.fillStyle = '#b0a890';
+                ctx.font = '7px sans-serif';
+                ctx.fillText(si2.speaker.substring(0, 4), xi2, yi2 - r - 4);
+            }
+        }
+        ctx.restore();
+    }
+    function findLayer(layers, idx) {
+        for (var i = 0; i < layers.length; i++) { if (layers[i].indexOf(idx) >= 0) return i; }
+        return -1;
+    }
+    function initFlowchartInteractions() {
+        var canvas = document.getElementById('flowchartCanvas');
+        if (!canvas) return;
+        canvas.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            if (e.ctrlKey) {
+                _flowchartScale = Math.max(0.3, Math.min(3, _flowchartScale * (e.deltaY < 0 ? 1.1 : 0.9)));
+            } else {
+                _flowchartPanX -= e.deltaX;
+                _flowchartPanY -= e.deltaY;
+            }
+            renderFlowchart();
+        });
+        canvas.addEventListener('mousedown', function(e) {
+            _flowchartDragging = true;
+            _flowchartDragStart = { x: e.clientX - _flowchartPanX, y: e.clientY - _flowchartPanY };
+        });
+        window.addEventListener('mousemove', function(e) {
+            if (!_flowchartDragging || !_flowchartDragStart) return;
+            _flowchartPanX = e.clientX - _flowchartDragStart.x;
+            _flowchartPanY = e.clientY - _flowchartDragStart.y;
+            renderFlowchart();
+        });
+        window.addEventListener('mouseup', function() { _flowchartDragging = false; });
+    }
+
+    // DOM 元素
+    const tbody = document.getElementById('sceneTableBody');
+    const editIdx = document.getElementById('editIdx');
+    const editSpeaker = document.getElementById('editSpeaker');
+    const editText = document.getElementById('editText');
+    const editBg = document.getElementById('editBg');
+    const editSprite = document.getElementById('editSprite');
+    const editBgm = document.getElementById('editBgm');
+    const editLocation = document.getElementById('editLocation');
+    const editNext = document.getElementById('editNext');
+    const editTrigger = document.getElementById('editTrigger');
+    const editCgKey = document.getElementById('editCgKey');
+    const editHasChoices = document.getElementById('editHasChoices');
+    const choicesEditorWrapper = document.getElementById('choicesEditorWrapper');
+    const choicesEditor = document.getElementById('choicesEditor');
+    const addChoiceBtn = document.getElementById('addChoiceBtn');
+    const statusMsg = document.getElementById('statusMsg');
+    const previewBgLayer = document.getElementById('previewBgLayer');
+    const previewBgLayer2 = document.getElementById('previewBgLayer2');
+    const previewLocationHint = document.getElementById('previewLocationHint');
+    const previewSpriteWrapper = document.getElementById('previewSpriteWrapper');
+    const previewSpriteImg = document.getElementById('previewSpriteImg');
+    const previewMultiContainer = document.getElementById('previewMultiSpriteContainer');
+    const previewVignette = document.getElementById('previewVignetteOverlay');
+    const previewFlash = document.getElementById('previewFlashOverlay');
+    const previewLetterbox = document.getElementById('previewLetterboxOverlay');
+    const previewAffinity = document.getElementById('previewAffinityDisplay');
+    const previewSpeaker = document.getElementById('previewSpeaker');
+    const previewSpeakerName = document.getElementById('previewSpeakerName');
+    const previewDialogText = document.getElementById('previewDialogText');
+    const previewSubtitleTag = document.getElementById('previewSubtitleTag');
+    const previewChoicesContainer = document.getElementById('previewChoicesContainer');
+    const cgPreviewInfo = document.getElementById('cgPreviewInfo');
+
+    // 刷新场景列表（增加分支列）
+    function renderSceneTable() {
+        tbody.innerHTML = '';
+        scenesData.forEach((scene, idx) => {
+            const row = tbody.insertRow();
+            row.className = 'scene-row';
+            if (idx === currentSelectedIndex) row.classList.add('selected');
+            row.insertCell(0).innerText = idx;
+            row.insertCell(1).innerText = scene.speaker || '—';
+            row.insertCell(2).innerText = (scene.text || '').substring(0, 30) + (scene.text?.length > 30 ? '…' : '');
+            row.insertCell(3).innerText = scene.bg || '—';
+            var spriteInfo = ((scene.sprites && scene.sprites.length > 0) ? scene.sprites.map(s=>s.key||'?').join(',') : (scene.sprite || '—')) + (scene.clearStage ? ' 🧹' : '');
+            if (scene.videoKey) spriteInfo += ' 🎥';
+            row.insertCell(4).innerText = spriteInfo;
+            var cgInfo = scene.cgKey || '无';
+            if (scene.transition) cgInfo += ' 🎬';
+            row.insertCell(5).innerText = cgInfo;
+            row.insertCell(6).innerText = scene.hasChoices ? `✓ (${scene.choices?.length || 0})` + (scene.conditionNext ? ' 🔀' : '') : (scene.conditionNext ? '🔀条件' : '无');
+            const actionCell = row.insertCell(7);
+            row.insertCell(8).innerText = scene.subtitle || '-';
+            actionCell.innerHTML = `<div class="edit-buttons"><button class="icon-btn select-scene" data-idx="${idx}">✏️ 编辑</button></div>`;
+            row.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('select-scene')) selectScene(idx);
+            });
+            const btn = actionCell.querySelector('.select-scene');
+            if (btn) btn.onclick = (e) => { e.stopPropagation(); selectScene(idx); };
+        });
+    }
+
+    // 更新CG下拉选项
+
+    function updateCgSelect() {
+        editCgKey.innerHTML = '<option value="">无</option>';
+        for (let key in assets.cg) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = `${key} (${assets.cg[key].split('/').pop()})`;
+            editCgKey.appendChild(option);
+        }
+    }
+
+    function updateSeSelect() {
+        const seSelect = document.getElementById('editSeKey');
+        if (!seSelect) return;
+        seSelect.innerHTML = '<option value="">无</option>';
+        for (let key in assets.se) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = `${key} (${assets.se[key].split('/').pop()})`;
+            seSelect.appendChild(option);
+        }
+    }
+
+    function updateVoiceSelect(selectedVal) {
+        const voiceSelect = document.getElementById('editVoice');
+        if (!voiceSelect) return;
+        voiceSelect.innerHTML = '<option value="">无</option>';
+        for (let key in assets.voice) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = `${key} (${assets.voice[key].split('/').pop()})`;
+            if (selectedVal === key) option.selected = true;
+            voiceSelect.appendChild(option);
+        }
+    }
+
+    function updateSpriteSelect() {
+        editSprite.innerHTML = '<option value="">无</option>';
+        for (let key in assets.sprites) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = `${key}`;
+            editSprite.appendChild(option);
+        }
+        // also refresh multi-sprite editor dropdowns
+        refreshAllSpriteSlotSelects();
+    }
+    function renderMultiSpriteEditor() {
+        const list = document.getElementById('multiSpriteList');
+        if (!list) return;
+        const scene = scenesData[currentSelectedIndex];
+        const sprites = scene && scene.sprites ? scene.sprites : [];
+        list.innerHTML = '';
+        sprites.forEach((spr, i) => {
+            const div = document.createElement('div');
+            div.className = 'sprite-slot-editor';
+            div.innerHTML = `
+                <label>立绘</label>
+                <select class="sprite-slot-key" data-idx="${i}">
+                    <option value="">无</option>
+                    ${Object.keys(assets.sprites).map(k => `<option value="${escHtml(k)}" ${spr.key === k ? 'selected' : ''}>${escHtml(k)}</option>`).join('')}
+                </select>
+                <label>位置</label>
+                <select class="sprite-slot-pos" data-idx="${i}">
+                    <option value="left" ${spr.position === 'left' ? 'selected' : ''}>左</option>
+                    <option value="center" ${spr.position === 'center' ? 'selected' : ''}>中</option>
+                    <option value="right" ${spr.position === 'right' ? 'selected' : ''}>右</option>
+                </select>
+                <label>呼吸</label>
+                <input type="checkbox" class="sprite-slot-breathe" data-idx="${i}" ${spr.breathing !== false ? 'checked' : ''}>
+                <label>透明</label>
+                <input type="number" class="sprite-slot-opacity" data-idx="${i}" value="${spr.opacity !== undefined ? spr.opacity : 1}" min="0" max="1" step="0.1" style="width:50px;">
+                <button class="remove-slot-btn" data-idx="${i}">✕</button>
+            `;
+            list.appendChild(div);
+        });
+        // Bind remove buttons
+        list.querySelectorAll('.remove-slot-btn').forEach(btn => {
+            btn.onclick = () => {
+                scene.sprites.splice(parseInt(btn.dataset.idx), 1);
+                renderMultiSpriteEditor();
+            };
+        });
+        // Bind change events
+        list.querySelectorAll('.sprite-slot-key, .sprite-slot-pos, .sprite-slot-breathe, .sprite-slot-opacity').forEach(el => {
+            el.onchange = () => collectMultiSpritesFromEditor();
+        });
+    }
+    function refreshAllSpriteSlotSelects() {
+        document.querySelectorAll('.sprite-slot-key').forEach(sel => {
+            const curVal = sel.value;
+            sel.innerHTML = '<option value="">无</option>' +
+                Object.keys(assets.sprites).map(k => `<option value="${escHtml(k)}" ${curVal === k ? 'selected' : ''}>${escHtml(k)}</option>`).join('');
+        });
+    }
+    function collectMultiSpritesFromEditor() {
+        const scene = scenesData[currentSelectedIndex];
+        if (!scene) return;
+        const sprites = [];
+        document.querySelectorAll('.sprite-slot-editor').forEach(row => {
+            const keySel = row.querySelector('.sprite-slot-key');
+            const posSel = row.querySelector('.sprite-slot-pos');
+            const breatheCb = row.querySelector('.sprite-slot-breathe');
+            const opacityInp = row.querySelector('.sprite-slot-opacity');
+            if (keySel && keySel.value) {
+                const spr = { key: keySel.value, position: posSel ? posSel.value : 'right' };
+                if (breatheCb && !breatheCb.checked) spr.breathing = false;
+                if (opacityInp) { const v = parseFloat(opacityInp.value); if (!isNaN(v) && v !== 1) spr.opacity = v; }
+                sprites.push(spr);
+            }
+        });
+        scene.sprites = sprites;
+    }
+    function addSpriteSlot() {
+        const scene = scenesData[currentSelectedIndex];
+        if (!scene.sprites) scene.sprites = [];
+        scene.sprites.push({ key: '', position: 'right', breathing: true });
+        renderMultiSpriteEditor();
+    }
+    function insertBBCode(tag, attr) {
+        const ta = editText;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const sel = ta.value.substring(start, end);
+        let open = attr ? `[${tag}=${attr}]` : `[${tag}]`;
+        let close = `[/${tag}]`;
+        ta.value = ta.value.substring(0, start) + open + sel + close + ta.value.substring(end);
+        ta.focus();
+        ta.setSelectionRange(start + open.length, start + open.length + sel.length);
+        // trigger input event so any framework binding picks up the change
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    function selectScene(idx) {
+        if (idx < 0 || idx >= scenesData.length) return;
+        currentSelectedIndex = idx;
+        const scene = scenesData[idx];
+        editIdx.value = idx;
+        editSpeaker.value = scene.speaker || '';
+        editText.value = scene.text || '';
+        editBg.value = scene.bg || '';
+        updateSpriteSelect();
+        editSprite.value = scene.sprite || '';
+        editBgm.value = scene.bgm || '';
+        editLocation.value = scene.locationHint || '';
+        editNext.value = scene.next !== undefined ? scene.next : -1;
+        editTrigger.value = scene.triggerChapterTransition ? 'true' : 'false';
+        document.getElementById('editSubtitle').value = scene.subtitle || '';
+        editCgKey.value = scene.cgKey || '';
+        editHasChoices.value = scene.hasChoices ? 'true' : 'false';
+        document.getElementById('editSeKey').value = scene.seKey || '';
+        document.getElementById('editClearStage').value = scene.clearStage ? 'true' : 'false';
+        if (scene.voice) updateVoiceSelect(scene.voice);
+        else updateVoiceSelect('');
+        document.getElementById('editEndingKey').value = scene.endingKey || '';
+        document.getElementById('editEndingTitle').value = scene.endingTitle || '';
+        var aff = scene.affinity;
+        document.getElementById('editAffinity').value = (aff !== undefined && aff !== null) ? aff : -1;
+        document.getElementById('editAffinityLabel').value = scene.affinityLabel || '';
+        document.getElementById('editTransition').value = scene.transition || '';
+        document.getElementById('editVideoKey').value = scene.videoKey || '';
+        renderMultiSpriteEditor();
+        renderChoicesEditor();
+        renderSetVarEditor();
+        renderCondNextEditor();
+        renderSceneTable();
+        updatePreview();
+        // 加载演出效果
+        loadEffectsIntoForm(scene.effects || []);
+        statusMsg.innerText = t('editor.scene_select', idx);
+    }
+
+    
+
+    function renderChoicesEditor() {
+        const scene = scenesData[currentSelectedIndex];
+        if (!scene) return;
+        
+        // 显示/隐藏分支选项编辑区域
+        if (scene.hasChoices) {
+            choicesEditorWrapper.style.display = 'block';
+            choicesEditor.innerHTML = '';
+            scene.choices.forEach((choice, idx) => {
+                const choiceDiv = document.createElement('div');
+                choiceDiv.className = 'choice-item';
+                choiceDiv.innerHTML = `
+                    <input type="text" value="${escHtml(choice.text)}" placeholder="选项文本" class="choice-text" data-idx="${idx}">
+                    <input type="number" value="${choice.nextIdx}" placeholder="跳转索引" class="choice-next" data-idx="${idx}">
+                    <button class="delete-choice" data-idx="${idx}">🗑</button>
+                `;
+                choiceDiv.querySelector('.choice-text').onchange = (e) => {
+                    scene.choices[idx].text = e.target.value;
+                };
+                choiceDiv.querySelector('.choice-next').onchange = (e) => {
+                    scene.choices[idx].nextIdx = parseInt(e.target.value, 10);
+                };
+                choiceDiv.querySelector('.delete-choice').onclick = () => {
+                    scene.choices.splice(idx, 1);
+                    renderChoicesEditor();
+                };
+                choicesEditor.appendChild(choiceDiv);
+            });
+        } else {
+            choicesEditorWrapper.style.display = 'none';
+        }
+    }
+
+    // 演出效果表单辅助
+    function loadEffectsIntoForm(effects) {
+        // 清空所有复选框
+        document.querySelectorAll('#effectsGrid input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.getElementById('editEffectsDuration').value = 0;
+        if (!effects || !Array.isArray(effects)) return;
+        const hasDuration = effects.find(e => e.duration);
+        if (hasDuration) document.getElementById('editEffectsDuration').value = hasDuration.duration || 0;
+        effects.forEach(eff => {
+            const cb = document.querySelector(`#effectsGrid input[data-eff="${eff.type}"]`);
+            if (cb) cb.checked = true;
+        });
+    }
+    function collectEffectsFromForm() {
+        const effects = [];
+        const duration = parseInt(document.getElementById('editEffectsDuration').value, 10) || 0;
+        document.querySelectorAll('#effectsGrid input[type="checkbox"]:checked').forEach(cb => {
+            const eff = { type: cb.dataset.eff };
+            if (duration > 0) eff.duration = duration;
+            effects.push(eff);
+        });
+        return effects;
+    }
+
+    // ===== setVar 编辑器 =====
+    function renderSetVarEditor() {
+        const list = document.getElementById('setVarList');
+        if (!list) return;
+        const scene = scenesData[currentSelectedIndex];
+        const vars = scene && scene.setVar && typeof scene.setVar === 'object' ? scene.setVar : {};
+        const keys = Object.keys(vars);
+        list.innerHTML = '';
+        keys.forEach(function(k) {
+            const row = document.createElement('div');
+            row.className = 'kv-row';
+            row.innerHTML = `
+                <input class="kv-key" value="${escHtml(k)}" placeholder="变量名">
+                <span style="color:#a09888;font-size:0.7rem;">=</span>
+                <input class="kv-val" value="${escHtml(vars[k])}" placeholder="值">
+                <button class="kv-remove">✕</button>
+            `;
+            row.querySelector('.kv-remove').onclick = function() {
+                delete vars[k];
+                renderSetVarEditor();
+            };
+            row.querySelector('.kv-key').onchange = function(e) {
+                var oldKey = k;
+                var newKey = e.target.value.trim();
+                if (newKey && newKey !== oldKey) {
+                    if (vars.hasOwnProperty(newKey)) {
+                        statusMsg.innerText = '⚠️ 变量名 "' + newKey + '" 已存在，请使用不同的名称';
+                        e.target.value = oldKey;
+                        return;
+                    }
+                    vars[newKey] = vars[oldKey];
+                    delete vars[oldKey];
+                }
+            };
+            row.querySelector('.kv-val').onchange = function(e) {
+                var rawVal = e.target.value.trim();
+                var currentKey = row.querySelector('.kv-key').value.trim();
+                if (!currentKey) return;
+                var num = Number(rawVal);
+                vars[currentKey] = isNaN(num) ? rawVal : num;
+            };
+            list.appendChild(row);
+        });
+        // 注意：不在此处初始化 scene.setVar，避免仅查看场景就改变数据
+        // 初始化仅在用户点击"添加变量"按钮时进行
+    }
+    function collectSetVarFromEditor() {
+        const scene = scenesData[currentSelectedIndex];
+        if (!scene || !scene.setVar || typeof scene.setVar !== 'object') return null;
+        const keys = Object.keys(scene.setVar);
+        if (keys.length === 0) return null;
+        var result = {};
+        // Re-read from DOM to catch unsaved changes
+        document.querySelectorAll('#setVarList .kv-row').forEach(function(row) {
+            var keyInput = row.querySelector('.kv-key');
+            var valInput = row.querySelector('.kv-val');
+            if (keyInput && keyInput.value.trim()) {
+                var k = keyInput.value.trim();
+                var rawVal = valInput ? valInput.value.trim() : '';
+                var num = Number(rawVal);
+                result[k] = isNaN(num) ? rawVal : num;
+            }
+        });
+        return Object.keys(result).length > 0 ? result : null;
+    }
+
+    // ===== conditionNext 编辑器 =====
+    function renderCondNextEditor() {
+        const list = document.getElementById('condNextList');
+        if (!list) return;
+        const scene = scenesData[currentSelectedIndex];
+        const conds = scene && scene.conditionNext && typeof scene.conditionNext === 'object' ? scene.conditionNext : {};
+        const keys = Object.keys(conds);
+        list.innerHTML = '';
+        keys.forEach(function(k) {
+            const row = document.createElement('div');
+            row.className = 'kv-row';
+            var isDefault = k === 'default';
+            row.innerHTML = `
+                <input class="kv-key" value="${escHtml(k)}" placeholder="${isDefault ? 'default (默认)' : '条件表达式'}" ${isDefault ? 'style="color:#dba541;"' : ''}>
+                <span style="color:#a09888;font-size:0.7rem;">→ 跳转到</span>
+                <input class="kv-next" value="${conds[k]}" placeholder="索引" type="number">
+                <button class="kv-remove">✕</button>
+            `;
+            row.querySelector('.kv-remove').onclick = function() {
+                delete conds[k];
+                renderCondNextEditor();
+            };
+            row.querySelector('.kv-key').onchange = function(e) {
+                var oldKey = k;
+                var newKey = e.target.value.trim();
+                if (newKey && newKey !== oldKey) {
+                    if (conds.hasOwnProperty(newKey)) {
+                        statusMsg.innerText = '⚠️ 条件 "' + newKey + '" 已存在，请使用不同的表达式';
+                        e.target.value = oldKey;
+                        return;
+                    }
+                    conds[newKey] = conds[oldKey];
+                    delete conds[oldKey];
+                }
+            };
+            row.querySelector('.kv-next').onchange = function(e) {
+                var currentKey = row.querySelector('.kv-key').value.trim();
+                if (!currentKey) return;
+                conds[currentKey] = parseInt(e.target.value, 10);
+            };
+            list.appendChild(row);
+        });
+        // 注意：不在此处初始化 scene.conditionNext，避免仅查看场景就改变数据
+        // 初始化仅在用户点击"添加条件"按钮时进行
+    }
+    function collectCondNextFromEditor() {
+        const scene = scenesData[currentSelectedIndex];
+        if (!scene || !scene.conditionNext || typeof scene.conditionNext !== 'object') return null;
+        var result = {};
+        document.querySelectorAll('#condNextList .kv-row').forEach(function(row) {
+            var keyInput = row.querySelector('.kv-key');
+            var valInput = row.querySelector('.kv-next');
+            if (keyInput && keyInput.value.trim()) {
+                var k = keyInput.value.trim();
+                result[k] = valInput ? parseInt(valInput.value, 10) : -1;
+            }
+        });
+        return Object.keys(result).length > 0 ? result : null;
+    }
+
+    function updateVideoSelect() {
+        const sel = document.getElementById('editVideoKey');
+        if (!sel) return;
+        var curVal = sel.value;
+        sel.innerHTML = '<option value="">无</option>';
+        for (var key in assets.video) {
+            var opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = key + ' (' + assets.video[key].split('/').pop() + ')';
+            if (curVal === key) opt.selected = true;
+            sel.appendChild(opt);
+        }
+    }
+
+    function updatePreview() {
+        if (currentSelectedIndex < 0 || currentSelectedIndex >= scenesData.length) return;
+        const scene = scenesData[currentSelectedIndex];
+        const visualArea = document.getElementById('previewVisualArea');
+
+        // --- 背景 ---
+        const bgUrl = assets.bg[scene.bg] || '';
+        const bgVal = bgUrl ? `url(${bgUrl})` : 'linear-gradient(135deg, #2e3f2c, #1d2a1a)';
+        previewBgLayer.style.backgroundImage = bgVal;
+        previewBgLayer.style.backgroundSize = 'cover';
+        previewBgLayer.style.backgroundPosition = 'center';
+        previewBgLayer2.style.opacity = '0';
+
+        // --- 地点提示 ---
+        if (scene.locationHint) {
+            previewLocationHint.innerText = scene.locationHint;
+            previewLocationHint.classList.add('show');
+        } else {
+            previewLocationHint.classList.remove('show');
+        }
+
+        // --- 立绘 ---
+        const spritesArr = (scene.sprites && scene.sprites.length > 0) ? scene.sprites : null;
+        previewMultiContainer.innerHTML = '';
+        if (spritesArr) {
+            // 多立绘
+            previewSpriteWrapper.style.opacity = '0';
+            previewSpriteImg.src = '';
+            spritesArr.forEach(spr => {
+                if (spr.key && assets.sprites[spr.key]) {
+                    const slot = document.createElement('div');
+                    slot.className = 'preview-sprite-slot pos-' + (spr.position || 'right');
+                    const img = document.createElement('img');
+                    img.src = assets.sprites[spr.key];
+                    img.style.opacity = spr.opacity !== undefined ? spr.opacity : '1';
+                    slot.appendChild(img);
+                    previewMultiContainer.appendChild(slot);
+                }
+            });
+            previewMultiContainer.style.display = 'flex';
+        } else if (scene.sprite && assets.sprites[scene.sprite]) {
+            // 单立绘
+            previewMultiContainer.style.display = 'none';
+            previewSpriteImg.src = assets.sprites[scene.sprite];
+            previewSpriteWrapper.style.opacity = '1';
+        } else {
+            // 无立绘
+            previewMultiContainer.style.display = 'none';
+            previewSpriteImg.src = '';
+            previewSpriteWrapper.style.opacity = '0';
+        }
+
+        // --- 清场提示 ---
+        if (scene.clearStage) {
+            previewSpriteWrapper.style.opacity = '0';
+            previewMultiContainer.innerHTML = '';
+        }
+
+        // --- 对话框 ---
+        const speaker = scene.speaker;
+        if (speaker && speaker !== ' ') {
+            previewSpeakerName.classList.remove('empty');
+            previewSpeaker.innerText = speaker;
+        } else {
+            previewSpeakerName.classList.add('empty');
+            previewSpeaker.innerText = '　';
+        }
+        previewDialogText.innerText = scene.text || '';
+
+        // --- 章节副标题 ---
+        if (scene.triggerChapterTransition && scene.subtitle) {
+            previewSubtitleTag.innerText = scene.subtitle;
+            previewSubtitleTag.classList.add('show');
+        } else {
+            previewSubtitleTag.classList.remove('show');
+        }
+
+        // --- 分支选项 ---
+        if (scene.hasChoices && scene.choices && scene.choices.length > 0) {
+            previewChoicesContainer.innerHTML = '';
+            scene.choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'preview-choice-btn';
+                btn.innerText = choice.text;
+                previewChoicesContainer.appendChild(btn);
+            });
+            previewChoicesContainer.style.display = 'flex';
+        } else {
+            previewChoicesContainer.style.display = 'none';
+        }
+
+        // --- 好感度 ---
+        if (scene.affinity !== undefined && scene.affinity !== null && scene.affinity >= 0) {
+            previewAffinity.querySelector('.preview-affinity-label').innerText = scene.affinityLabel || '好感度';
+            previewAffinity.querySelector('.preview-affinity-fill-inner').style.width = Math.min(100, Math.max(0, scene.affinity)) + '%';
+            previewAffinity.classList.add('show');
+        } else {
+            previewAffinity.classList.remove('show');
+        }
+
+        // --- 画面演出效果 ---
+        applyEffectsToPreview(scene.effects || []);
+
+        // --- 视频预览 ---
+        var previewVideoOverlay = document.getElementById('previewVideoOverlay');
+        var previewVideoPlayer = document.getElementById('previewVideoPlayer');
+        if (previewVideoOverlay && previewVideoPlayer) {
+            if (scene.videoKey && assets.video[scene.videoKey]) {
+                var videoUrl = assets.video[scene.videoKey];
+                previewVideoPlayer.src = videoUrl;
+                previewVideoOverlay.classList.add('show');
+                previewVideoPlayer.play().catch(function() {});
+            } else {
+                previewVideoOverlay.classList.remove('show');
+                previewVideoPlayer.pause();
+                previewVideoPlayer.src = '';
+            }
+        }
+
+        // --- CG/视频/过渡提示 ---
+        var infoParts = [];
+        if (scene.cgKey && assets.cg[scene.cgKey]) {
+            infoParts.push(`🎞️ CG：${escHtml(scene.cgKey)}`);
+        }
+        if (scene.videoKey && assets.video[scene.videoKey]) {
+            infoParts.push(`🎥 视频：${escHtml(scene.videoKey)}`);
+        }
+        if (scene.transition) {
+            infoParts.push(`🎬 过渡：${escHtml(scene.transition)}`);
+        }
+        if (scene.setVar && typeof scene.setVar === 'object' && Object.keys(scene.setVar).length > 0) {
+            infoParts.push(`📝 变量：${JSON.stringify(scene.setVar)}`);
+        }
+        if (scene.conditionNext && typeof scene.conditionNext === 'object' && Object.keys(scene.conditionNext).length > 0) {
+            infoParts.push(`🔀 条件跳转：${JSON.stringify(scene.conditionNext)}`);
+        }
+        if (infoParts.length > 0) {
+            cgPreviewInfo.innerHTML = infoParts.map(function(p) { return escHtml(p); }).join('<br>');
+        } else {
+            cgPreviewInfo.innerHTML = `当前场景未关联CG`;
+        }
+    }
+
+    function applyEffectsToPreview(effects) {
+        const va = document.getElementById('previewVisualArea');
+        if (!va) return;
+        // 重置所有效果
+        va.classList.remove('shake-active', 'zoom-in-active', 'mood-warm', 'mood-cool', 'mood-dramatic');
+        previewVignette.classList.remove('active');
+        previewFlash.classList.remove('active');
+        previewLetterbox.classList.remove('active');
+        va.style.filter = '';
+        let activeLabels = [];
+
+        effects.forEach(eff => {
+            switch (eff.type) {
+                case 'shake':
+                    va.classList.remove('shake-active');
+                    void va.offsetWidth;
+                    va.classList.add('shake-active');
+                    activeLabels.push(t('editor.effect_shake'));
+                    break;
+                case 'flash':
+                    previewFlash.classList.add('active');
+                    setTimeout(() => previewFlash.classList.remove('active'), eff.duration || 200);
+                    activeLabels.push('白闪');
+                    break;
+                case 'vignette':
+                    previewVignette.classList.add('active');
+                    activeLabels.push('暗角');
+                    break;
+                case 'letterbox':
+                    previewLetterbox.classList.add('active');
+                    activeLabels.push('黑条');
+                    break;
+                case 'sepia':
+                    va.style.filter = (va.style.filter || '') + ' sepia(0.6)';
+                    activeLabels.push('怀旧');
+                    break;
+                case 'grayscale':
+                    va.style.filter = (va.style.filter || '') + ' grayscale(1)';
+                    activeLabels.push('黑白');
+                    break;
+                case 'blur':
+                    va.style.filter = (va.style.filter || '') + ' blur(3px)';
+                    activeLabels.push('模糊');
+                    break;
+                case 'bright':
+                    va.style.filter = (va.style.filter || '') + ' brightness(1.4)';
+                    activeLabels.push('增亮');
+                    break;
+                case 'dark':
+                    va.style.filter = (va.style.filter || '') + ' brightness(0.5)';
+                    activeLabels.push('变暗');
+                    break;
+                case 'saturate-high':
+                    va.style.filter = (va.style.filter || '') + ' saturate(1.8)';
+                    activeLabels.push('高饱和');
+                    break;
+                case 'saturate-low':
+                    va.style.filter = (va.style.filter || '') + ' saturate(0.3)';
+                    activeLabels.push('低饱和');
+                    break;
+                case 'zoom-in':
+                    va.classList.remove('zoom-in-active');
+                    void va.offsetWidth;
+                    va.classList.add('zoom-in-active');
+                    activeLabels.push('推进');
+                    break;
+                case 'mood-warm':
+                    va.classList.add('mood-warm');
+                    activeLabels.push('暖色');
+                    break;
+                case 'mood-cool':
+                    va.classList.add('mood-cool');
+                    activeLabels.push('冷色');
+                    break;
+                case 'mood-dramatic':
+                    va.classList.add('mood-dramatic');
+                    activeLabels.push('戏剧');
+                    break;
+                case 'clear':
+                    va.style.filter = '';
+                    va.classList.remove('shake-active', 'zoom-in-active', 'mood-warm', 'mood-cool', 'mood-dramatic');
+                    previewVignette.classList.remove('active');
+                    previewFlash.classList.remove('active');
+                    previewLetterbox.classList.remove('active');
+                    activeLabels = ['(清除)'];
+                    break;
+            }
+        });
+        if (activeLabels.length > 0) {
+            cgPreviewInfo.innerHTML += `<br>🎬 效果: ${activeLabels.join(' ')}`;
+        }
+    }
+
+    function previewCurrentCg() {
+        const scene = scenesData[currentSelectedIndex];
+        if (scene.cgKey && assets.cg[scene.cgKey]) {
+            window.open(assets.cg[scene.cgKey], '_blank');
+        } else {
+            statusMsg.innerText = "当前场景没有配置CG";
+        }
+    }
+
+    function updateCurrentScene() {
+        if (currentSelectedIndex < 0) return;
+        pushUndo();
+        collectMultiSpritesFromEditor();
+        const scene = scenesData[currentSelectedIndex];
+        const sprites = scene.sprites && scene.sprites.length > 0 ? scene.sprites : null;
+        const updated = {
+            speaker: editSpeaker.value,
+            text: editText.value,
+            bg: editBg.value,
+            sprite: sprites ? null : (editSprite.value || null),
+            sprites: sprites,
+            bgm: editBgm.value || null,
+            locationHint: editLocation.value,
+            next: parseInt(editNext.value, 10),
+            triggerChapterTransition: editTrigger.value === 'true',
+            cgKey: editCgKey.value || null,
+            hasChoices: editHasChoices.value === 'true',
+            choices: scene.choices || [],
+            subtitle: document.getElementById('editSubtitle').value,
+            seKey: document.getElementById('editSeKey').value || null,
+            effects: collectEffectsFromForm(),
+            clearStage: document.getElementById('editClearStage').value === 'true',
+            voice: document.getElementById('editVoice').value || null,
+            endingKey: document.getElementById('editEndingKey').value || null,
+            endingTitle: document.getElementById('editEndingTitle').value || null,
+            affinity: (function() { var v = parseInt(document.getElementById('editAffinity').value, 10); return isNaN(v) || v < 0 ? undefined : v; })(),
+            affinityLabel: document.getElementById('editAffinityLabel').value || '',
+            transition: document.getElementById('editTransition').value || '',
+            videoKey: document.getElementById('editVideoKey').value || null,
+            setVar: collectSetVarFromEditor(),
+            conditionNext: collectCondNextFromEditor(),
+        };
+        scenesData[currentSelectedIndex] = updated;
+        renderSceneTable();
+        updatePreview();
+        // 重新渲染 KV 编辑器以更新闭包引用
+        renderSetVarEditor();
+        renderCondNextEditor();
+        loadEffectsIntoForm(updated.effects || []);
+        statusMsg.innerText = `场景 ${currentSelectedIndex} 已更新`;
+    }
+
+    function createNewSceneFromTemplate(template) {
+        const cur = template || {};
+        return {
+            speaker: "新角色",
+            text: "新对话内容",
+            bg: cur.bg || "classroom",
+            sprite: cur.sprite || null,
+            sprites: cur.sprites ? JSON.parse(JSON.stringify(cur.sprites)) : [],
+            bgm: cur.bgm || "main",
+            locationHint: cur.locationHint || "",
+            next: -1,
+            triggerChapterTransition: false,
+            cgKey: cur.cgKey || null,
+            hasChoices: false,
+            choices: [],
+            subtitle: "",
+            seKey: cur.seKey || "",
+            effects: cur.effects ? JSON.parse(JSON.stringify(cur.effects)) : [],
+            clearStage: cur.clearStage || false,
+            voice: cur.voice || null,
+            endingKey: cur.endingKey || null,
+            endingTitle: cur.endingTitle || null,
+            affinity: cur.affinity,
+            affinityLabel: cur.affinityLabel || "",
+            transition: cur.transition || "",
+            videoKey: cur.videoKey || null,
+            setVar: cur.setVar ? JSON.parse(JSON.stringify(cur.setVar)) : null,
+            conditionNext: cur.conditionNext ? JSON.parse(JSON.stringify(cur.conditionNext)) : null,
+        };
+    }
+
+    function addNewScene() {
+        pushUndo();
+        const last = scenesData.length > 0 ? scenesData[scenesData.length - 1] : null;
+        scenesData.push(createNewSceneFromTemplate(last));
+        recalculateNextIndexes();
+        renderSceneTable();
+        selectScene(scenesData.length - 1);
+    }
+
+    function insertSceneBeforeCurrent() {
+        pushUndo();
+        const prev = currentSelectedIndex > 0 ? scenesData[currentSelectedIndex - 1] : null;
+        scenesData.splice(currentSelectedIndex, 0, createNewSceneFromTemplate(prev));
+        recalculateNextIndexes();
+        renderSceneTable();
+        selectScene(currentSelectedIndex);
+        statusMsg.innerText = `已在位置 ${currentSelectedIndex} 前插入新场景`;
+    }
+
+    function recalculateNextIndexes() {
+        for (let i = 0; i < scenesData.length - 1; i++) {
+            scenesData[i].next = i + 1;
+        }
+        if (scenesData.length > 0) {
+            scenesData[scenesData.length - 1].next = -1;
+        }
+    }
+
+    
+    function deleteSelectedScene() {
+        if (scenesData.length <= 1) { statusMsg.innerText = t('editor.keep_one'); return; }
+        pushUndo();
+        scenesData.splice(currentSelectedIndex, 1);
+        if (currentSelectedIndex >= scenesData.length) currentSelectedIndex = scenesData.length - 1;
+        recalculateNextIndexes();
+        selectScene(currentSelectedIndex);
+        statusMsg.innerText = `已删除场景，索引已重新计算`;
+    }
+
+    function locateNextChapter() {
+        if (currentSelectedIndex < 0 || scenesData.length === 0) {
+            statusMsg.innerText = "⚠️ 没有有效的场景";
+            return;
+        }
+        // 从当前场景的下一个开始查找
+        for (let i = currentSelectedIndex + 1; i < scenesData.length; i++) {
+            const scene = scenesData[i];
+            const isChapter = scene.triggerChapterTransition === true || scene.triggerChapterTransition === 'true';
+            if (isChapter) {
+                selectScene(i);   // 这会重新渲染表格并选中新行
+                
+                // 等待 DOM 更新完成后滚动到新选中的行
+                setTimeout(() => {
+                    const rows = document.querySelectorAll('.scene-row');
+                    if (rows[i]) {
+                        rows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 50);   // 给渲染留出一点时间
+                
+                statusMsg.innerText = t('editor.chapter_found') + ' ' + i;
+                return;
+            }
+        }
+        statusMsg.innerText = t('editor.chapter_not_found');
+    }
+    // 全局记录上一次搜索的关键词和方向，用于“下一个/上一个”
+    let lastSearchKeyword = '';
+    let lastSearchDirection = 'next'; // 'next' 或 'prev'
+
+    function searchAndLocate(direction) {
+        const keyword = document.getElementById('searchInput').value.trim();
+        if (!keyword) {
+            document.getElementById('searchStatus').innerText = t('editor.search_empty');
+            return;
+        }
+        lastSearchKeyword = keyword;
+        lastSearchDirection = direction;
+        
+        const lowerKeyword = keyword.toLowerCase();
+        let startIdx = currentSelectedIndex;
+        if (direction === 'next') {
+            startIdx = currentSelectedIndex + 1;
+        } else {
+            startIdx = currentSelectedIndex - 1;
+        }
+        
+        // 边界处理：如果方向是下一个且从-1开始（即当前选中的是最后一个，从0开始）
+        if (direction === 'next' && startIdx >= scenesData.length) {
+            startIdx = 0;
+        }
+        if (direction === 'prev' && startIdx < 0) {
+            startIdx = scenesData.length - 1;
+        }
+        
+        let foundIdx = -1;
+        let i = startIdx;
+        let loopCount = 0;
+        // 最多循环一遍所有场景
+        while (loopCount < scenesData.length) {
+            const scene = scenesData[i];
+            // 检查所有文本字段是否包含关键词
+            const match = (
+                (scene.speaker && scene.speaker.toLowerCase().includes(lowerKeyword)) ||
+                (scene.text && scene.text.toLowerCase().includes(lowerKeyword)) ||
+                (scene.bg && scene.bg.toLowerCase().includes(lowerKeyword)) ||
+                (scene.sprite && scene.sprite.toLowerCase().includes(lowerKeyword)) ||
+                (scene.sprites && scene.sprites.some(s => s.key && s.key.toLowerCase().includes(lowerKeyword))) ||
+                (scene.cgKey && scene.cgKey.toLowerCase().includes(lowerKeyword)) ||
+                (scene.locationHint && scene.locationHint.toLowerCase().includes(lowerKeyword)) ||
+                (scene.subtitle && scene.subtitle.toLowerCase().includes(lowerKeyword))
+            );
+            if (match) {
+                foundIdx = i;
+                break;
+            }
+            if (direction === 'next') {
+                i++;
+                if (i >= scenesData.length) i = 0;
+            } else {
+                i--;
+                if (i < 0) i = scenesData.length - 1;
+            }
+            loopCount++;
+        }
+        
+        if (foundIdx !== -1) {
+            selectScene(foundIdx);
+            // 滚动到目标行
+            setTimeout(() => {
+                const rows = document.querySelectorAll('.scene-row');
+                if (rows[foundIdx]) {
+                    rows[foundIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 50);
+            document.getElementById('searchStatus').innerHTML = t('editor.search_found', foundIdx);
+        } else {
+            document.getElementById('searchStatus').innerHTML = `❌ 未找到包含”${escHtml(keyword)}”的场景`;
+        }
+    }
+
+    // 搜索下一个（从当前之后开始，可循环）
+    function searchNext() {
+        searchAndLocate('next');
+    }
+
+    // 搜索上一个（从当前之前开始，可循环）
+    function searchPrev() {
+        searchAndLocate('prev');
+    }
+
+    
+    // ===== 项目诊断/验证 =====
+    function validateProject() {
+        var warnings = [], errors = [];
+        var reachable = new Set();
+        // BFS from scene 0
+        var queue = [0], visited = new Set();
+        while (queue.length > 0) {
+            var idx = queue.shift();
+            if (idx < 0 || idx >= scenesData.length || visited.has(idx)) continue;
+            visited.add(idx);
+            reachable.add(idx);
+            var scene = scenesData[idx];
+            if (scene.next !== undefined && scene.next >= 0) queue.push(scene.next);
+            if (scene.choices) {
+                scene.choices.forEach(function(c) { if (c.nextIdx !== undefined && c.nextIdx >= 0) queue.push(c.nextIdx); });
+            }
+            if (scene.conditionNext && typeof scene.conditionNext === 'object') {
+                Object.keys(scene.conditionNext).forEach(function(k) {
+                    if (scene.conditionNext[k] >= 0) queue.push(scene.conditionNext[k]);
+                });
+            }
+        }
+        // Check 1: orphan scenes
+        var orphans = [];
+        for (var i = 0; i < scenesData.length; i++) {
+            if (!reachable.has(i)) orphans.push(i);
+        }
+        if (orphans.length > 0) warnings.push('孤立场景 (无法从起点到达): ' + orphans.join(', '));
+        // Check 2: out-of-bounds indices
+        for (var i = 0; i < scenesData.length; i++) {
+            var s = scenesData[i];
+            if (s.next >= scenesData.length || (s.next < -1)) errors.push('场景 ' + i + ': next=' + s.next + ' 越界 (场景总数 ' + scenesData.length + ')');
+            if (s.choices) {
+                s.choices.forEach(function(c, ci) {
+                    if (c.nextIdx >= scenesData.length || (c.nextIdx < -1)) errors.push('场景 ' + i + ': 选项"' + c.text + '" 的 nextIdx=' + c.nextIdx + ' 越界');
+                });
+            }
+            if (s.conditionNext && typeof s.conditionNext === 'object') {
+                Object.keys(s.conditionNext).forEach(function(k) {
+                    if (s.conditionNext[k] >= scenesData.length || s.conditionNext[k] < -1)
+                        errors.push('场景 ' + i + ': 条件"' + k + '" → ' + s.conditionNext[k] + ' 越界');
+                });
+            }
+        }
+        // Check 3: missing asset references
+        var assetCategories = ['bg', 'sprites', 'bgm', 'cg', 'se', 'voice', 'video'];
+        for (var i = 0; i < scenesData.length; i++) {
+            var s = scenesData[i];
+            assetCategories.forEach(function(cat) {
+                var key;
+                if (cat === 'sprites') {
+                    if (s.sprites && s.sprites.length > 0) {
+                        s.sprites.forEach(function(spr) {
+                            if (spr.key && !assets.sprites[spr.key]) warnings.push('场景 ' + i + ': 立绘键 "' + spr.key + '" 在资源库中不存在');
+                        });
+                    }
+                    if (s.sprite && !assets.sprites[s.sprite]) warnings.push('场景 ' + i + ': 立绘键(单选) "' + s.sprite + '" 在资源库中不存在');
+                    return;
+                }
+                if (cat === 'bg') key = s.bg;
+                else if (cat === 'bgm') key = s.bgm;
+                else if (cat === 'cg') key = s.cgKey;
+                else if (cat === 'se') key = s.seKey;
+                else if (cat === 'voice') key = s.voice;
+                else if (cat === 'video') key = s.videoKey;
+                if (key && assets[cat] && !assets[cat][key]) warnings.push('场景 ' + i + ': ' + cat + ' 键 "' + key + '" 在资源库中不存在');
+            });
+        }
+        return { errors: errors, warnings: warnings, reachable: reachable.size, total: scenesData.length, orphans: orphans };
+    }
+
+    function exportFullProject() {
+        // ★ 导出前诊断
+        var diag = validateProject();
+        var diagMsg = '';
+        if (diag.errors.length > 0) {
+            diagMsg = '❌ 错误 (' + diag.errors.length + '):\n' + diag.errors.join('\n');
+            if (!confirm(diagMsg + '\n\n存在严重错误，是否仍要继续导出？')) return;
+        }
+        if (diag.warnings.length > 0) {
+            diagMsg = '⚠️ 警告 (' + diag.warnings.length + '):\n' + diag.warnings.join('\n');
+            if (!confirm(diagMsg + '\n\n是否继续导出？')) return;
+        }
+        var full = { scenes: scenesData, assets: assets, characters: characterProfiles };
+        if (imgbbUrlMap && Object.keys(imgbbUrlMap).length > 0) {
+            full.imgbbUrls = imgbbUrlMap;
+        }
+        download(JSON.stringify(full, null, 2), 'galgame_full_project.json');
+        var summary = t('editor.export_ok', diag.total, diag.reachable);
+        if (diag.warnings.length > 0) summary += ' | ⚠️ ' + diag.warnings.length + ' 警告';
+        if (diag.errors.length > 0) summary += ' | ❌ ' + diag.errors.length + ' 错误';
+        summary += (full.imgbbUrls ? ' | 图床 ' + Object.keys(full.imgbbUrls).length + ' 条' : '');
+        statusMsg.innerText = summary;
+    }
+
+    function download(content, filename) {
+        const blob = new Blob([content], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function importFullProject(file) {
+        pushUndo();
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.scenes) scenesData = data.scenes;
+                if (data.assets) {
+                    assets = data.assets;
+                    // 确保所有资源分类都存在，防止缺失分类导致添加资源时报错
+                    if (!assets.se) assets.se = {};
+                    if (!assets.voice) assets.voice = {};
+                    if (!assets.video) assets.video = {};
+                }
+                // 读取图床映射
+                if (data.imgbbUrls && typeof data.imgbbUrls === 'object') {
+                    imgbbUrlMap = data.imgbbUrls;
+                    refreshImgbbStats();
+                }
+                if (data.characters && typeof data.characters === 'object') {
+                    characterProfiles = data.characters;
+                    renderCharacterProfiles();
+                }
+                refreshResourceDisplays();
+                renderSceneTable();
+                selectScene(0);
+                statusMsg.innerText = t('editor.import_ok') + (data.imgbbUrls ? "（含图床链接 " + Object.keys(data.imgbbUrls).length + " 条）" : "");
+            } catch (err) { statusMsg.innerText = t('editor.import_fail'); }
+        };
+        reader.readAsText(file);
+    }
+
+    function resetDefault() {
+        pushUndo();
+        scenesData = [
+            { "bg": "campus", "speaker": "Narrator", "text": "Welcome to Ginkgo Engine.", "sprite": null, "sprites": [], "bgm": "theme", "locationHint": "Demo", "next": 1, "triggerChapterTransition": false, "cgKey": null, "hasChoices": false, "choices": [], "subtitle": "", "seKey": null, "effects": [], "clearStage": false, "voice": null, "endingKey": null, "endingTitle": null, "affinity": undefined, "affinityLabel": "", "transition": "", "videoKey": null, "setVar": null, "conditionNext": null },
+            { "bg": "campus", "speaker": "System", "text": "Edit scenes in the right panel.", "sprite": "char_default", "sprites": [], "bgm": "theme", "locationHint": "Editor", "next": -1, "triggerChapterTransition": false, "cgKey": null, "hasChoices": true, "choices": [{"text": "Option 1", "nextIdx": 2}, {"text": "Option 2", "nextIdx": -1}], "subtitle": "", "seKey": null, "effects": [], "clearStage": false, "voice": null, "endingKey": null, "endingTitle": null, "affinity": undefined, "affinityLabel": "", "transition": "", "videoKey": null, "setVar": null, "conditionNext": null }
+        ];
+        assets = {
+            bg: { campus: "assets/bg/campus.png" },
+            sprites: { char_default: "assets/sprites/character_default.png" },
+            bgm: { theme: "assets/bgm/theme.mp3" },
+            cg: {},
+            se: {},
+            voice: {},
+            video: {}
+        };
+        refreshResourceDisplays();
+        renderSceneTable();
+        selectScene(0);
+        statusMsg.innerText = t('editor.reset_done');
+    }
+
+    // 资源管理（显示键名和文件名）
+    function refreshResourceDisplays() {
+        const spriteDiv = document.getElementById('spriteList');
+        const bgDiv = document.getElementById('bgList');
+        const bgmDiv = document.getElementById('bgmList');
+        const cgDiv = document.getElementById('cgList');
+        
+        spriteDiv.innerHTML = '';
+        for (let key in assets.sprites) {
+            const filename = assets.sprites[key].split('/').pop();
+            spriteDiv.innerHTML += `<div class="resource-item">
+                <span class="resource-preview-trigger" data-type="sprite" data-key="${escHtml(key)}" data-url="${assets.sprites[key]}" style="cursor: pointer; flex:1;">
+                    <span class="resource-key">${escHtml(key)}</span><span class="resource-filename">：${filename}</span>
+                </span>
+                <button class="replace-sprite" data-key="${escHtml(key)}">替换</button>
+            </div>`;
+        }
+        bgDiv.innerHTML = '';
+        for (let key in assets.bg) {
+            const filename = assets.bg[key].split('/').pop();
+            bgDiv.innerHTML += `<div class="resource-item">
+                <span class="resource-preview-trigger" data-type="bg" data-key="${escHtml(key)}" data-url="${assets.bg[key]}" style="cursor: pointer; flex:1;">
+                    <span class="resource-key">${escHtml(key)}</span><span class="resource-filename">：${filename}</span>
+                </span>
+                <button class="replace-bg" data-key="${escHtml(key)}">替换</button>
+            </div>`;
+        }
+        bgmDiv.innerHTML = '';
+        for (let key in assets.bgm) {
+            const filename = assets.bgm[key].split('/').pop();
+            bgmDiv.innerHTML += `<div class="resource-item">
+                <span class="resource-preview-trigger" data-type="bgm" data-key="${escHtml(key)}" data-url="${assets.bgm[key]}" style="cursor: pointer; flex:1;">
+                    <span class="resource-key">${escHtml(key)}</span><span class="resource-filename">：${filename}</span>
+                </span>
+                <button class="replace-bgm" data-key="${escHtml(key)}">替换</button>
+            </div>`;
+        }
+        cgDiv.innerHTML = '';
+        for (let key in assets.cg) {
+            const filename = assets.cg[key].split('/').pop();
+            cgDiv.innerHTML += `<div class="resource-item">
+                <span class="resource-preview-trigger" data-type="cg" data-key="${escHtml(key)}" data-url="${assets.cg[key]}" style="cursor: pointer; flex:1;">
+                    <span class="resource-key">${escHtml(key)}</span><span class="resource-filename">：${filename}</span>
+                </span>
+                <button class="replace-cg" data-key="${escHtml(key)}">替换</button>
+            </div>`;
+        }
+        const seDiv = document.getElementById('seList');
+        if (seDiv) {
+            seDiv.innerHTML = '';
+            for (let key in assets.se) {
+                const filename = assets.se[key].split('/').pop();
+                seDiv.innerHTML += `<div class="resource-item">
+                    <span class="resource-preview-trigger" data-type="se" data-key="${escHtml(key)}" data-url="${assets.se[key]}" style="cursor: pointer; flex:1;">
+                        <span class="resource-key">${escHtml(key)}</span><span class="resource-filename">：${filename}</span>
+                    </span>
+                    <button class="replace-se" data-key="${escHtml(key)}">替换</button>
+                </div>`;
+            }
+        }
+        const voiceDiv = document.getElementById('voiceList');
+        if (voiceDiv) {
+            voiceDiv.innerHTML = '';
+            for (let key in assets.voice) {
+                const filename = assets.voice[key].split('/').pop();
+                voiceDiv.innerHTML += `<div class="resource-item">
+                    <span class="resource-preview-trigger" data-type="voice" data-key="${escHtml(key)}" data-url="${assets.voice[key]}" style="cursor: pointer; flex:1;">
+                        <span class="resource-key">${escHtml(key)}</span><span class="resource-filename">：${filename}</span>
+                    </span>
+                    <button class="replace-voice" data-key="${escHtml(key)}">替换</button>
+                </div>`;
+            }
+        }
+        const videoDiv = document.getElementById('videoList');
+        if (videoDiv) {
+            videoDiv.innerHTML = '';
+            for (let key in assets.video) {
+                const filename = assets.video[key].split('/').pop();
+                videoDiv.innerHTML += `<div class="resource-item">
+                    <span class="resource-preview-trigger" data-type="video" data-key="${escHtml(key)}" data-url="${assets.video[key]}" style="cursor: pointer; flex:1;">
+                        <span class="resource-key">${escHtml(key)}</span><span class="resource-filename">：${filename}</span>
+                    </span>
+                    <button class="replace-video" data-key="${escHtml(key)}">替换</button>
+                </div>`;
+            }
+        }
+        attachReplaceEvents();
+        updateCgSelect();
+        updateSpriteSelect();
+        updateVideoSelect();
+        updatePreview();
+        updateSeSelect();
+        updateVoiceSelect('');
+        bindPreviewTriggers();
+    }
+
+    let currentAudio = null;  // 用于记录正在播放的音频
+
+    function playAudio(url, keyName) {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+        }
+        const audio = new Audio(url);
+        audio.play();
+        currentAudio = audio;
+        statusMsg.innerText = `🎵 正在播放：${keyName}`;
+        audio.onended = () => {
+            currentAudio = null;
+            statusMsg.innerText = `✅ ${keyName} 播放完毕`;
+        };
+    }
+
+    function stopAudio() {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+            statusMsg.innerText = `⏹️ 已停止播放`;
+        }
+    }
+
+    function openVideoPreviewModal(url, keyName) {
+        const modal = document.getElementById('videoPreviewModal');
+        const player = document.getElementById('videoPreviewPlayer');
+        const caption = document.getElementById('videoPreviewCaption');
+        if (!modal || !player) return;
+        player.src = url;
+        player.controls = true;
+        caption.innerText = keyName + ' (video)';
+        modal.classList.add('show');
+        player.play().catch(function(e) { console.warn('视频预览播放失败:', e); });
+        statusMsg.innerText = '🎬 正在预览视频: ' + keyName;
+    }
+    function closeVideoPreviewModal() {
+        const modal = document.getElementById('videoPreviewModal');
+        const player = document.getElementById('videoPreviewPlayer');
+        if (modal) modal.classList.remove('show');
+        if (player) { player.pause(); player.src = ''; }
+    }
+
+    function playSE(url, keyName) {
+        if (!url) return;
+        const audio = new Audio(url);
+        audio.play().catch(e => console.warn("音效播放失败", e));
+        statusMsg.innerText = `🔊 播放音效：${keyName}`;
+    }
+
+    function attachReplaceEvents() {
+        document.querySelectorAll('.replace-sprite').forEach(btn => btn.onclick = () => uploadAndReplace('sprite', btn.dataset.key));
+        document.querySelectorAll('.replace-bg').forEach(btn => btn.onclick = () => uploadAndReplace('bg', btn.dataset.key));
+        document.querySelectorAll('.replace-bgm').forEach(btn => btn.onclick = () => uploadAndReplace('bgm', btn.dataset.key));
+        document.querySelectorAll('.replace-cg').forEach(btn => btn.onclick = () => uploadAndReplace('cg', btn.dataset.key));
+        document.querySelectorAll('.replace-se').forEach(btn => btn.onclick = () => uploadAndReplace('se', btn.dataset.key));
+        document.querySelectorAll('.replace-voice').forEach(btn => btn.onclick = () => uploadAndReplace('voice', btn.dataset.key));
+        document.querySelectorAll('.replace-video').forEach(btn => btn.onclick = () => uploadAndReplace('video', btn.dataset.key));
+    }
+
+    function bindPreviewTriggers() {
+        document.querySelectorAll('.resource-preview-trigger').forEach(trigger => {
+            trigger.onclick = (e) => {
+                e.stopPropagation();
+                const type = trigger.dataset.type;
+                const url = trigger.dataset.url;
+                const key = trigger.dataset.key;
+                if (!url) return;
+                if (type === 'bgm' || type === 'se') {
+                    playAudio(url, key);
+                } else if (type === 'video') {
+                    openVideoPreviewModal(url, key);
+                } else if (type === 'voice') {
+                    playAudio(url, key);
+                } else if (type === 'sprite') {
+                    // 点立绘资源名 → 预览面板直接换上这个立绘
+                    previewMultiContainer.style.display = 'none';
+                    previewMultiContainer.innerHTML = '';
+                    previewSpriteImg.src = url;
+                    previewSpriteWrapper.style.opacity = '1';
+                    statusMsg.innerText = '👤 预览立绘: ' + key;
+                } else if (type === 'bg') {
+                    // 点背景资源名 → 预览面板换上这个背景
+                    previewBgLayer.style.backgroundImage = 'url(' + url + ')';
+                    previewBgLayer.style.opacity = '1';
+                    statusMsg.innerText = '🏞️ 预览背景: ' + key;
+                } else {
+                    // 其他图片（CG 等）→ 全屏查看
+                    const modal = document.getElementById('imagePreviewModal');
+                    const img = document.getElementById('imagePreviewImg');
+                    const caption = document.getElementById('imagePreviewCaption');
+                    img.src = url;
+                    caption.innerText = `${key} (${type})`;
+                    modal.style.display = 'flex';
+                }
+            };
+        });
+    }
+
+    function uploadAndReplace(type, key) {
+        const input = document.createElement('input');
+        const folderMap = { sprite: 'lhcf', bg: 'bj', bgm: 'BGM', cg: 'CG', se: 'SE', voice: 'Voice', video: 'Video'};
+        input.type = 'file';
+        input.accept = (type === 'bgm' || type === 'se' || type === 'voice') ? 'audio/*' : (type === 'video') ? 'video/*' : 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (type === 'sprite') {
+                const currentPath = assets.sprites[key] || '';
+                const match = currentPath.match(new RegExp(`^${folderMap[type]}/([^/]+)/`));
+                const defaultSub = match ? match[1] : 'wxg_normal';
+                const subfolder = prompt(`子文件夹名`, defaultSub);
+                if (!subfolder) return;
+                assets.sprites[key] = `${folderMap[type]}/${subfolder}/${file.name}`;
+            }
+            else if (type === 'bg') assets.bg[key] = `${folderMap[type]}/${file.name}`;
+            else if (type === 'bgm') assets.bgm[key] = `${folderMap[type]}/${file.name}`;
+            else if (type === 'cg') assets.cg[key] = `${folderMap[type]}/${file.name}`;
+            else if (type === 'se') assets.se[key] = `${folderMap[type]}/${file.name}`;
+            else if (type === 'voice') assets.voice[key] = `${folderMap[type]}/${file.name}`;
+            else if (type === 'video') assets.video[key] = `${folderMap[type]}/${file.name}`;
+            refreshResourceDisplays();
+            updatePreview();
+            statusMsg.innerText = `资源 ${key} 已替换为 ${file.name}`;
+        };
+        input.click();
+    }
+
+    function addNewResource(type, category) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = type === 'audio' ? 'audio/*' : type === 'video' ? 'video/*' : 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const newKey = prompt(`输入键名`, `new_${Date.now()}`);
+            if (!newKey) return;
+            const folderMap = { sprite: 'lhcf', bg: 'bj', bgm: 'BGM', cg: 'CG', se: 'SE', voice: 'Voice', video: 'Video' };
+            let path;
+            if (category === 'sprite') {
+                const subfolder = prompt(`输入子文件夹名`, 'wxg_normal');
+                if (!subfolder) return;
+                path = `${folderMap[category]}/${subfolder}/${file.name}`;
+            } else {
+                path = `${folderMap[category]}/${file.name}`;
+            }
+
+            // 根据类别存入 assets
+            if (category === 'sprite') assets.sprites[newKey] = path;
+            else if (category === 'bg') assets.bg[newKey] = path;
+            else if (category === 'bgm') assets.bgm[newKey] = path;
+            else if (category === 'cg') assets.cg[newKey] = path;
+            else if (category === 'se') assets.se[newKey] = path;
+            else if (category === 'voice') assets.voice[newKey] = path;
+            else if (category === 'video') assets.video[newKey] = path;
+            
+            refreshResourceDisplays();   // 刷新左侧列表
+            updateCgSelect();            // 更新 CG 下拉框
+            updateSpriteSelect();
+            updateSeSelect();        // 更新立绘下拉框
+            statusMsg.innerText = `已添加资源 ${newKey} -> ${path}`;
+        };
+        input.click();
+    }
+
+    // ====================================================================
+    // ☁️ ImgBB 图床上传模块
+    // ====================================================================
+    let imgbbQueued = []; // [{ path: string, file: File }]
+    let imgbbStop = false;
+
+    function refreshImgbbStats() {
+        var el = document.getElementById('imgbbStats');
+        var applyBtn = document.getElementById('imgbbApplyBtn');
+        if (!el) return;
+        var n = Object.keys(imgbbUrlMap).length;
+        el.textContent = n > 0 ? '映射: ' + n + ' 条' : '未上传';
+        if (applyBtn) applyBtn.disabled = (n === 0);
+    }
+
+    function refreshImgbbFileList() {
+        var list = document.getElementById('imgbbFileList');
+        if (!list) return;
+        if (imgbbQueued.length === 0) {
+            list.innerHTML = '';
+            return;
+        }
+        var doneCount = 0, failCount = 0, pendingCount = 0;
+        var html = '';
+        for (var i = 0; i < imgbbQueued.length; i++) {
+            var q = imgbbQueued[i];
+            var cls = '', stat = '';
+            if (imgbbUrlMap[q.path]) { cls = 'done'; stat = '✓'; doneCount++; }
+            else if (q._failed) { cls = 'fail'; stat = '✗'; failCount++; }
+            else { pendingCount++; }
+            html += '<div class="imgbb-file-item"><span>' + q.path + '</span><span class="' + cls + '">' + stat + '</span></div>';
+        }
+        list.innerHTML = html;
+        var stats = document.getElementById('imgbbStats');
+        if (stats) stats.textContent = '成功 ' + doneCount + ' / 失败 ' + failCount + ' / 待传 ' + pendingCount + ' | 映射: ' + Object.keys(imgbbUrlMap).length + ' 条';
+    }
+
+    function imgbbSelectFolder() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.setAttribute('webkitdirectory', '');
+        input.multiple = true;
+        input.accept = 'image/*';
+        input.onchange = function(e) {
+            var files = e.target.files;
+            imgbbQueued = [];
+
+            // --- 收集 raw 路径，计算公共前缀后剥离 ---
+            var rawPaths = [];
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                if (!f.type.startsWith('image/')) continue;
+                var raw = f.webkitRelativePath || f.name;
+                rawPaths.push({ raw: raw, file: f });
+            }
+
+            // 找到所有路径的公共前缀（到最后一个共同目录分隔符为止）
+            function commonPrefixLen(paths) {
+                if (paths.length <= 1) return 0;
+                var first = paths[0].raw;
+                var maxLen = first.length;
+                for (var p = 0; p < paths.length; p++) {
+                    var s = paths[p].raw;
+                    var j = 0;
+                    while (j < maxLen && j < s.length && first[j] === s[j]) j++;
+                    maxLen = j;
+                    if (maxLen === 0) break;
+                }
+                // 回退到最后一个 / 或 \ 之后，保留子目录结构
+                var lastSep = -1;
+                for (var k = 0; k < maxLen; k++) {
+                    if (first[k] === '/' || first[k] === '\\') lastSep = k;
+                }
+                return lastSep >= 0 ? lastSep + 1 : 0;
+            }
+            var prefixLen = commonPrefixLen(rawPaths);
+
+            // 构建去前缀后的路径列表
+            var strippedPaths = rawPaths.map(function(item) {
+                var p = item.raw;
+                if (prefixLen > 0 && prefixLen < p.length) p = p.substring(prefixLen);
+                return p.replace(/\\/g, '/');
+            });
+
+            // 安全阀：如果所有路径都被剥离成了纯文件名（无子目录），
+            // 说明选中的是子文件夹而非项目根目录，应保留原路径
+            var allFlat = strippedPaths.every(function(p) { return p.indexOf('/') < 0; });
+            if (allFlat && prefixLen > 0) {
+                strippedPaths = rawPaths.map(function(item) {
+                    return item.raw.replace(/\\/g, '/');
+                });
+            }
+
+            for (var i = 0; i < rawPaths.length; i++) {
+                var relPath = strippedPaths[i];
+                if (imgbbQueued.some(function(q) { return q.path === relPath; })) continue;
+                imgbbQueued.push({ path: relPath, file: rawPaths[i].file });
+            }
+
+            refreshImgbbFileList();
+            updateImgbbButtons();
+        };
+        input.click();
+    }
+
+    function updateImgbbButtons() {
+        var upBtn = document.getElementById('imgbbUploadBtn');
+        var clearBtn = document.getElementById('imgbbClearBtn');
+        var apiKey = document.getElementById('imgbbApiKey');
+        if (upBtn) upBtn.disabled = imgbbQueued.length === 0 || !(apiKey && apiKey.value.trim());
+        if (clearBtn) clearBtn.disabled = imgbbQueued.length === 0 && Object.keys(imgbbUrlMap).length === 0;
+    }
+
+    async function imgbbUploadAll() {
+        var apiKeyEl = document.getElementById('imgbbApiKey');
+        var key = (apiKeyEl && apiKeyEl.value || '').trim();
+        if (!key) { alert(t('editor.imgb_no_key')); return; }
+        // 保存 key
+        try { localStorage.setItem('imgbb_api_key', key); } catch(e) {}
+
+        imgbbStop = false;
+        var upBtn = document.getElementById('imgbbUploadBtn');
+        var clearBtn = document.getElementById('imgbbClearBtn');
+        if (upBtn) upBtn.disabled = true;
+        if (clearBtn) clearBtn.disabled = true;
+
+        var pending = imgbbQueued.filter(function(q) { return !imgbbUrlMap[q.path] && !q._failed; });
+        var total = pending.length;
+        var done = 0, errs = 0;
+
+        var progress = document.getElementById('imgbbProgress');
+        if (progress) progress.style.width = '0%';
+
+        for (var i = 0; i < pending.length; i++) {
+            if (imgbbStop) break;
+            var q = pending[i];
+
+            try {
+                var base64 = await new Promise(function(resolve, reject) {
+                    var reader = new FileReader();
+                    reader.onload = function() { resolve(reader.result.split(',')[1]); };
+                    reader.onerror = function() { reject(new Error('read error')); };
+                    reader.readAsDataURL(q.file);
+                });
+
+                var form = new FormData();
+                form.append('key', key);
+                form.append('image', base64);
+                var name = q.path.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '');
+                form.append('name', name);
+
+                var resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
+                var data = await resp.json();
+                if (data.success) {
+                    imgbbUrlMap[q.path] = data.data.url;
+                    done++;
+                } else {
+                    q._failed = true;
+                    errs++;
+                }
+            } catch(ex) {
+                q._failed = true;
+                errs++;
+            }
+
+            var pct = Math.round(((done + errs) / total) * 100);
+            if (progress) progress.style.width = pct + '%';
+            refreshImgbbFileList();
+
+            // rate limit (ImgBB free tier: ~1 req/sec)
+            await new Promise(function(r) { setTimeout(r, 1200); });
+        }
+
+        if (progress) progress.style.width = '100%';
+        updateImgbbButtons();
+        refreshImgbbStats();
+        var applyBtn = document.getElementById('imgbbApplyBtn');
+        if (applyBtn) applyBtn.disabled = (Object.keys(imgbbUrlMap).length === 0);
+
+        statusMsg.innerText = '☁️ 上传完成: 成功 ' + done + ' / 失败 ' + errs + ' | 总映射 ' + Object.keys(imgbbUrlMap).length + ' 条';
+    }
+
+    function imgbbClearList() {
+        imgbbQueued = [];
+        imgbbStop = true;
+        refreshImgbbFileList();
+        updateImgbbButtons();
+        var progress = document.getElementById('imgbbProgress');
+        if (progress) progress.style.width = '0%';
+    }
+
+    // 将图床链接替换到 assets 中（仅用于本地预览，导出 JSON 会自动包含 imgbbUrls）
+    function imgbbApplyToAssets() {
+        if (Object.keys(imgbbUrlMap).length === 0) return;
+        var applied = 0;
+        ['bg', 'sprites', 'cg', 'se', 'voice', 'video'].forEach(function(cat) {
+            var catObj = assets[cat];
+            if (!catObj) return;
+            for (var key in catObj) {
+                var localPath = catObj[key];
+                if (typeof localPath === 'string' && imgbbUrlMap[localPath]) {
+                    catObj[key] = imgbbUrlMap[localPath];
+                    applied++;
+                }
+            }
+        });
+        refreshResourceDisplays();
+        updatePreview();
+        statusMsg.innerText = t('editor.imgb_applied', applied);
+    }
+
+    // --- 事件绑定 ---
+    (function bindImgbbEvents() {
+        var apiEl = document.getElementById('imgbbApiKey');
+        if (apiEl) {
+            var savedKey = localStorage.getItem('imgbb_api_key');
+            if (savedKey) apiEl.value = savedKey;
+            apiEl.addEventListener('input', updateImgbbButtons);
+        }
+        var selBtn = document.getElementById('imgbbSelectBtn');
+        if (selBtn) selBtn.addEventListener('click', imgbbSelectFolder);
+        var upBtn = document.getElementById('imgbbUploadBtn');
+        if (upBtn) upBtn.addEventListener('click', imgbbUploadAll);
+        var clrBtn = document.getElementById('imgbbClearBtn');
+        if (clrBtn) clrBtn.addEventListener('click', imgbbClearList);
+        var appBtn = document.getElementById('imgbbApplyBtn');
+        if (appBtn) appBtn.addEventListener('click', imgbbApplyToAssets);
+    })();
+
+    // 快捷键处理
+    function setupKeyboardShortcuts() {
+        document.addEventListener('keydown', function(e) {
+            // 如果在输入框中，只保留 Ctrl+S 和 Escape
+            const tag = e.target.tagName.toLowerCase();
+            const isInput = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
+
+            // Ctrl+S: 更新场景
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                updateCurrentScene();
+                return;
+            }
+            // Ctrl+E: 导出完整项目
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                e.preventDefault();
+                exportFullProject();
+                return;
+            }
+            // Escape: 关闭右键菜单、图片预览和视频预览
+            if (e.key === 'Escape') {
+                const menu = document.getElementById('contextMenu');
+                if (menu) menu.style.display = 'none';
+                const imgModal = document.getElementById('imagePreviewModal');
+                if (imgModal) imgModal.style.display = 'none';
+                closeVideoPreviewModal();
+                return;
+            }
+            // 以下快捷键在输入框中不生效
+            if (isInput) return;
+            // Ctrl+Z: 撤销
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+                e.preventDefault();
+                undo();
+                return;
+            }
+            // Ctrl+Y / Ctrl+Shift+Z: 重做
+            if ((e.ctrlKey || e.metaKey) && ((!e.shiftKey && (e.key === 'y' || e.key === 'Y')) || (e.shiftKey && (e.key === 'z' || e.key === 'Z')))) {
+                e.preventDefault();
+                redo();
+                return;
+            }
+            // Ctrl+N: 新增场景
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'n') {
+                e.preventDefault();
+                addNewScene();
+                return;
+            }
+            // Ctrl+Shift+N: 在当前位置前插入
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+                e.preventDefault();
+                insertSceneBeforeCurrent();
+                return;
+            }
+            // Ctrl+R: 刷新预览
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                updatePreview();
+                return;
+            }
+            // Ctrl+F: 聚焦搜索框
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.focus();
+                return;
+            }
+            // Delete: 删除选中场景
+            if (e.key === 'Delete') {
+                e.preventDefault();
+                deleteSelectedScene();
+                return;
+            }
+            // 上下箭头键导航场景
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentSelectedIndex > 0) selectScene(currentSelectedIndex - 1);
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (currentSelectedIndex < scenesData.length - 1) selectScene(currentSelectedIndex + 1);
+                return;
+            }
+            // 空格键切换到下一个场景
+            if (e.key === ' ') {
+                e.preventDefault();
+                if (currentSelectedIndex < scenesData.length - 1) selectScene(currentSelectedIndex + 1);
+                return;
+            }
+        });
+    }
+
+    // 右键菜单
+    function setupContextMenu() {
+        const menu = document.getElementById('contextMenu');
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            menu.style.display = 'block';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 260) + 'px';
+            menu.style.top = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 10) + 'px';
+        });
+        document.addEventListener('click', function() {
+            menu.style.display = 'none';
+        });
+        menu.addEventListener('click', function(e) {
+            const item = e.target.closest('.context-menu-item');
+            if (!item) return;
+            const action = item.dataset.action;
+            switch (action) {
+                case 'update': updateCurrentScene(); break;
+                case 'add': addNewScene(); break;
+                case 'insert': insertSceneBeforeCurrent(); break;
+                case 'delete': deleteSelectedScene(); break;
+                case 'refresh': updatePreview(); break;
+                case 'undo': undo(); break;
+                case 'redo': redo(); break;
+                case 'validate': (function() {
+                    var d = validateProject();
+                    var m = '🔍 诊断 | 场景 ' + d.total + ' 可达 ' + d.reachable;
+                    if (d.warnings.length) m += '\n⚠️ ' + d.warnings.join('\n⚠️ ');
+                    if (d.errors.length) m += '\n❌ ' + d.errors.join('\n❌ ');
+                    if (!d.warnings.length && !d.errors.length) m += '\n✅ 无问题';
+                    alert(m);
+                    statusMsg.innerText = m.replace(/\n/g, ' | ');
+                })(); break;
+                case 'export': exportFullProject(); break;
+                case 'locate': locateNextChapter(); break;
+                case 'reset': if (confirm('确定要重置为默认数据吗？所有修改将丢失。')) resetDefault(); break;
+            }
+            menu.style.display = 'none';
+        });
+    }
+
+    // 初始化
+    function init() {
+        refreshResourceDisplays();
+        renderSceneTable();
+        selectScene(0);
+        document.getElementById('updateSceneBtn').onclick = updateCurrentScene;
+        document.getElementById('uploadSeBtn').onclick = () => addNewResource('audio', 'se');
+        document.getElementById('addSceneBtn').onclick = addNewScene;
+        document.getElementById('insertSceneBtn').onclick = insertSceneBeforeCurrent;
+        document.getElementById('deleteSceneBtn').onclick = deleteSelectedScene;
+        document.getElementById('exportFullBtn').onclick = exportFullProject;
+        document.getElementById('validateBtn').onclick = function() {
+            var diag = validateProject();
+            var msg = '🔍 诊断报告 | 场景总数: ' + diag.total + ' | 可达: ' + diag.reachable;
+            if (diag.orphans.length > 0) msg += '\n⚠️ 孤立场景: ' + diag.orphans.join(', ');
+            if (diag.warnings.length > 0) msg += '\n⚠️ ' + diag.warnings.join('\n⚠️ ');
+            if (diag.errors.length > 0) msg += '\n❌ ' + diag.errors.join('\n❌ ');
+            if (diag.warnings.length === 0 && diag.errors.length === 0) msg += '\n✅ 未发现问题！';
+            alert(msg);
+            statusMsg.innerText = msg.replace(/\n/g, ' | ');
+        };
+        document.getElementById('importFullBtn').onclick = () => { let inp = document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>importFullProject(e.target.files[0]); inp.click(); };
+        document.getElementById('resetDemoBtn').onclick = resetDefault;
+        document.getElementById('refreshPreviewBtn').onclick = updatePreview;
+        document.getElementById('previewCgBtn').onclick = previewCurrentCg;
+        document.getElementById('locateNextChapterBtn').onclick = locateNextChapter;
+        document.getElementById('uploadSpriteBtn').onclick = () => addNewResource('image', 'sprite');
+        document.getElementById('uploadBgBtn').onclick = () => addNewResource('image', 'bg');
+        document.getElementById('uploadBgmBtn').onclick = () => addNewResource('audio', 'bgm');
+        document.getElementById('uploadCgBtn').onclick = () => addNewResource('image', 'cg');
+        document.getElementById('uploadVoiceBtn').onclick = () => addNewResource('audio', 'voice');
+        document.getElementById('uploadVideoBtn').onclick = () => addNewResource('video', 'video');
+        document.getElementById('undoBtn').onclick = undo;
+        document.getElementById('redoBtn').onclick = redo;
+        // 新功能绑定
+        document.getElementById('exportChunkedBtn').onclick = exportChunkedProject;
+        document.getElementById('addCharProfileBtn').onclick = addCharacterProfile;
+        document.getElementById('aiRewriteBtn').onclick = aiRewriteDialogue;
+        document.getElementById('toggleFlowchartBtn').onclick = toggleFlowchart;
+        var closeFcBtn = document.getElementById('closeFlowchartBtn');
+        if (closeFcBtn) closeFcBtn.onclick = function() { document.getElementById('flowchartPanel').style.display = 'none'; };
+        renderCharacterProfiles();
+        initFlowchartInteractions();
+        document.getElementById('searchNextBtn').onclick = searchNext;
+        document.getElementById('searchPrevBtn').onclick = searchPrev;
+        const imgPreviewModal = document.getElementById('imagePreviewModal');
+        if (imgPreviewModal) {
+            imgPreviewModal.onclick = function() {
+                imgPreviewModal.style.display = 'none';
+            };
+        }
+        const closeBtn = document.getElementById('closeImagePreview');
+        if (closeBtn) {
+            closeBtn.onclick = function(e) {
+                e.stopPropagation();
+                document.getElementById('imagePreviewModal').style.display = 'none';
+            };
+        }
+        // 点击模态框背景关闭
+        window.onclick = (e) => {
+            const imgModal = document.getElementById('imagePreviewModal');
+            if (imgModal && e.target === imgModal) {
+                imgModal.style.display = 'none';
+            }
+            const vidModal = document.getElementById('videoPreviewModal');
+            if (vidModal && e.target === vidModal) {
+                closeVideoPreviewModal();
+            }
+        };
+
+        // 视频预览模态框关闭按钮
+        const closeVideoBtn = document.getElementById('closeVideoPreview');
+        if (closeVideoBtn) {
+            closeVideoBtn.onclick = function(e) {
+                e.stopPropagation();
+                closeVideoPreviewModal();
+            };
+        }
+
+        // 预览区视频点击跳过
+        const previewVidOverlay = document.getElementById('previewVideoOverlay');
+        if (previewVidOverlay) {
+            previewVidOverlay.addEventListener('click', function(e) {
+                if (e.target.tagName === 'VIDEO') return;
+                var vp = document.getElementById('previewVideoPlayer');
+                if (vp) { vp.pause(); vp.src = ''; }
+                previewVidOverlay.classList.remove('show');
+            });
+            var previewVidPlayer = document.getElementById('previewVideoPlayer');
+            if (previewVidPlayer) {
+                previewVidPlayer.addEventListener('ended', function() {
+                    previewVidOverlay.classList.remove('show');
+                    previewVidPlayer.src = '';
+                });
+            }
+        }
+
+        setupKeyboardShortcuts();
+        setupContextMenu();
+
+        // 可选：按回车键触发查找下一个
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchNext();
+            }
+        });
+        editHasChoices.onchange = () => {
+            const scene = scenesData[currentSelectedIndex];
+            scene.hasChoices = editHasChoices.value === 'true';
+            if (scene.hasChoices && (!scene.choices || scene.choices.length === 0)) {
+                scene.choices = [{"text": "新选项", "nextIdx": -1}];
+            }
+            if (!scene.hasChoices) {
+                scene.choices = [];
+            }
+            renderChoicesEditor();
+            updatePreview();
+        };
+        addChoiceBtn.onclick = () => {
+            const scene = scenesData[currentSelectedIndex];
+            if (scene.choices) {
+                scene.choices.push({"text": "新选项", "nextIdx": -1});
+                renderChoicesEditor();
+                updatePreview();
+            }
+        };
+        document.getElementById('addSpriteSlotBtn').onclick = addSpriteSlot;
+        document.getElementById('addSetVarBtn').onclick = function() {
+            var scene = scenesData[currentSelectedIndex];
+            if (!scene.setVar || typeof scene.setVar !== 'object') scene.setVar = {};
+            var key = 'newVar';
+            if (scene.setVar[key] !== undefined) key = 'var_' + Date.now();
+            scene.setVar[key] = 0;
+            renderSetVarEditor();
+        };
+        document.getElementById('addCondNextBtn').onclick = function() {
+            var scene = scenesData[currentSelectedIndex];
+            if (!scene.conditionNext || typeof scene.conditionNext !== 'object') scene.conditionNext = {};
+            var key = 'affection>=50';
+            if (scene.conditionNext[key] !== undefined) key = 'condition_' + Date.now();
+            scene.conditionNext[key] = -1;
+            renderCondNextEditor();
+        };
+        document.querySelectorAll('.bbcode-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tag = btn.dataset.tag;
+                const attr = btn.dataset.attr || '';
+                insertBBCode(tag, attr);
+            };
+        });
+    }
+
+    init();
+</script>
+</body>
+</html>

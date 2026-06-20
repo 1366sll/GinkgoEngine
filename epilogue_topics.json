@@ -1,0 +1,10 @@
+[
+  { "id": "hello", "text": "Hi, how are you feeling today?", "hint": "👋 Say hello" },
+  { "id": "story", "text": "That was quite an adventure we had...", "hint": "📖 Reflect on the story" },
+  { "id": "future", "text": "What are you thinking about doing now?", "hint": "🌟 Talk about the future" },
+  { "id": "memory", "text": "Do you remember when we first met?", "hint": "🕰️ Share a memory" },
+  { "id": "silence", "text": "(Stay silent for a moment and just enjoy the quiet)", "hint": "🤫 Quiet moment" },
+  { "id": "music", "text": "Can you play a song for me?", "hint": "🎵 Ask about music" },
+  { "id": "hometown", "text": "Tell me more about where you grew up.", "hint": "🏠 Talk about hometown" },
+  { "id": "photo", "text": "I took a nice photo today, let me describe it to you.", "hint": "📷 Share a photo" }
+]
